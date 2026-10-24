@@ -1,8 +1,3 @@
-cha:* ${dateStr}\n-----------------------------------\n\n`;
-
-      machinesList.forEach(m => {
-        const r = currentPlantState[m.id];
-        const estado = r?.estado || 'Parada Prioridad';
 <!DOCTYPE html>
 <html lang="es" class="h-full bg-slate-100">
 <head>
@@ -36,7 +31,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- SheetJS / XLSX for Official Excel Export -->
+  <!-- SheetJS / XLSX for Official Excel Export & Import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <!-- Google Fonts Inter -->
@@ -333,6 +328,55 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
     <!-- ========================================== -->
     <div id="tab-content-maestros" class="space-y-6 hidden">
       
+      <!-- MAESTRO BASE DE DATOS ARTÍCULOS & MOLDE (BUSCAR V) -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <div>
+            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center space-x-2">
+              <i class="fa-solid fa-table text-brand-500"></i>
+              <span>Base de Datos de Artículos y Moldes (Motor BUSCAR V)</span>
+            </h3>
+            <p class="text-xs text-slate-500">Importe su archivo Excel con las columnas: <strong>Código Artículo</strong>, <strong>Referencia / Nombre</strong> y <strong>Código Molde</strong>.</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <label class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Cargar Excel de Artículos</span>
+              <input type="file" id="import-articles-excel" accept=".xlsx, .xls, .csv" onchange="importArticlesExcel(event)" class="hidden">
+            </label>
+
+            <button onclick="openAddArticleModal()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1">
+              <i class="fa-solid fa-plus"></i>
+              <span>Añadir Manual</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-slate-500 dark:text-slate-400">Total artículos registrados: <strong id="articles-count" class="text-slate-800 dark:text-slate-100 font-bold">0</strong></span>
+          <div class="relative w-64">
+            <input type="text" id="articles-search-input" oninput="renderArticlesMasterTable()" placeholder="Buscar en maestro..." class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-1.5 bg-slate-50 dark:bg-slate-900">
+          </div>
+        </div>
+
+        <div class="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 dark:bg-slate-900 sticky top-0 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="p-2.5">Código Artículo</th>
+                <th class="p-2.5">Referencia / Descripción</th>
+                <th class="p-2.5">Código Molde</th>
+                <th class="p-2.5 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="articles-master-table-body" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         <!-- Maestro de Personal -->
@@ -385,7 +429,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
               <i class="fa-solid fa-database text-brand-400"></i>
               <span>Copia de Seguridad y Resguardo de Datos (Backup JSON)</span>
             </h3>
-            <p class="text-xs text-slate-400 mt-0.5">Exporte o importe toda la base de datos (máquinas, historial, operadores) para trasladarla entre computadores o tabletas.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Exporte o importe toda la base de datos (artículos, máquinas, historial, operadores) para trasladarla entre computadores o tabletas.</p>
           </div>
 
           <div class="flex items-center space-x-3">
@@ -472,22 +516,34 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
           </div>
         </div>
 
-        <!-- Referencia Producto -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Referencia / Descripción Comercial *</label>
-          <input type="text" id="form-referencia" required placeholder="ej. Envase 500/1000 cc alimentos alimentos blanco" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
-        </div>
-
-        <!-- Código Artículo & Código Molde -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Artículo</label>
-            <input type="text" id="form-cod-articulo" placeholder="ej. ART-8802" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+        <!-- CÓDIGO ARTÍCULO (CON AUTO-COMPLETADO / BUSCAR V) -->
+        <div class="p-3 bg-brand-50/50 dark:bg-brand-950/20 rounded-xl border border-brand-200 dark:border-brand-900/50 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-brand-700 dark:text-brand-300">
+              <i class="fa-solid fa-bolt mr-1"></i> Búsqueda Automática (BUSCAR V)
+            </label>
+            <span id="vlookup-status" class="text-[10px] text-slate-500 italic">Escriba el código para autocompletar</span>
           </div>
 
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Artículo *</label>
+              <input type="text" id="form-cod-articulo" list="articles-list-options" required oninput="triggerVLookupArticle(this.value)" placeholder="ej. ART-8802" class="w-full text-xs font-bold text-brand-600 dark:text-brand-400 border border-brand-300 dark:border-brand-700 rounded-xl p-2.5 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-brand-500">
+              <datalist id="articles-list-options">
+                <!-- Opciones dinámicas -->
+              </datalist>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Molde (Auto)</label>
+              <input type="text" id="form-cod-molde" placeholder="ej. M-402-B" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+            </div>
+          </div>
+
+          <!-- Referencia Producto (Auto Rellenado) -->
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Molde</label>
-            <input type="text" id="form-cod-molde" placeholder="ej. M-402-B" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Referencia / Descripción Comercial *</label>
+            <input type="text" id="form-referencia" required placeholder="ej. Envase 500/1000 cc alimentos blanco" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
           </div>
         </div>
 
@@ -567,6 +623,29 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL: AÑADIR ARTÍCULO MANUAL -->
+  <div id="modal-add-article" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Registrar Nuevo Artículo / Molde</h3>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Código Artículo *</label>
+        <input type="text" id="new-art-code" placeholder="ej. ART-8802" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Referencia / Descripción Comercial *</label>
+        <input type="text" id="new-art-desc" placeholder="ej. Envase 500 cc blanco" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+      </div>
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Código Molde *</label>
+        <input type="text" id="new-art-mold" placeholder="ej. M-102" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeAddArticleModal()" class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400">Cancelar</button>
+        <button onclick="handleAddArticleManual()" class="px-4 py-1.5 text-xs bg-brand-600 text-white rounded-xl font-bold">Guardar Artículo</button>
+      </div>
     </div>
   </div>
 
@@ -717,6 +796,15 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       { id: "2000", name: "Inyectora 2000" }
     ];
 
+    // BASE DE DATOS INICIAL DE ARTÍCULOS PARA BUSCAR V
+    const DEFAULT_ARTICLES_MASTER = [
+      { codArticulo: "ART-8802", referencia: "Envase 500/1000 cc alimentos blanco", codMolde: "M-102" },
+      { codArticulo: "ART-990", referencia: "Recipiente click rectangular transparente", codMolde: "M-408-A" },
+      { codArticulo: "PAP-01", referencia: "Papelera vaivén fantasía azul", codMolde: "M-PAP-V" },
+      { codArticulo: "CAJ-30", referencia: "Caja agrícola calada reforzada", codMolde: "M-CAJ-30" },
+      { codArticulo: "BAL-20", referencia: "Balde industrial 20 Litros con manija", codMolde: "M-BAL-20" }
+    ];
+
     const INITIAL_REPORTS = [
       {
         id: "rep-001",
@@ -775,6 +863,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
     // --- 2. ESTADO GLOBAL DE LA APLICACIÓN ---
     let staffList = [];
     let machinesList = [];
+    let articlesMaster = [];   // Base de datos para BUSCAR V
     let currentPlantState = {}; // Tarjeta viva de la máquina -> Último reporte
     let historyLogs = [];       // Vector persistente con TODOS los reportes generados
     let activePlantaFilter = 'todas';
@@ -789,7 +878,11 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       const storedMachines = localStorage.getItem('inj_machines');
       machinesList = storedMachines ? JSON.parse(storedMachines) : [...DEFAULT_MACHINES];
 
-      // 3. Cargar Historial
+      // 3. Cargar Base de Artículos (BUSCAR V)
+      const storedArticles = localStorage.getItem('inj_articles_master');
+      articlesMaster = storedArticles ? JSON.parse(storedArticles) : [...DEFAULT_ARTICLES_MASTER];
+
+      // 4. Cargar Historial
       const storedHistory = localStorage.getItem('inj_history_logs');
       if (storedHistory) {
         historyLogs = JSON.parse(storedHistory);
@@ -798,12 +891,11 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
         localStorage.setItem('inj_history_logs', JSON.stringify(historyLogs));
       }
 
-      // 4. Cargar o Reconstruir Estado Actual de Planta (Conserva la última condición de cada máquina)
+      // 5. Cargar o Reconstruir Estado Actual de Planta (Conserva la última condición de cada máquina)
       const storedPlant = localStorage.getItem('inj_current_plant');
       if (storedPlant) {
         currentPlantState = JSON.parse(storedPlant);
       } else {
-        // Reconstruir tomando la última novedad de cada máquina en el historial
         rebuildPlantStateFromHistory();
       }
 
@@ -818,13 +910,13 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       renderMachinesGrid();
       renderStaffList();
       renderMachinesMasterList();
+      renderArticlesMasterTable();
       populateHistoryFilterDropdowns();
     }
 
     function rebuildPlantStateFromHistory() {
       currentPlantState = {};
       machinesList.forEach(m => {
-        // Buscar el reporte más reciente para esta máquina en el historial
         const lastReport = historyLogs.find(r => r.machineId === m.id);
         if (lastReport) {
           currentPlantState[m.id] = { ...lastReport };
@@ -862,7 +954,164 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       populateHistoryFilterDropdowns();
     }
 
-    // --- 4. RENDERIZADO PLANTA EN VIVO ---
+    function saveArticlesMaster() {
+      localStorage.setItem('inj_articles_master', JSON.stringify(articlesMaster));
+      renderArticlesMasterTable();
+      populateArticlesDatalist();
+    }
+
+    // --- 4. MOTOR BUSCAR V (VLOOKUP) PARA CÓDIGO DE ARTÍCULO & MOLDE ---
+    function triggerVLookupArticle(codeVal) {
+      const statusEl = document.getElementById('vlookup-status');
+      const cleanCode = codeVal.trim().toLowerCase();
+
+      if (!cleanCode) {
+        statusEl.innerText = 'Escriba el código para autocompletar';
+        statusEl.className = 'text-[10px] text-slate-500 italic';
+        return;
+      }
+
+      // Realizar el BUSCAR V en el arreglo de artículos
+      const found = articlesMaster.find(item => item.codArticulo.toLowerCase() === cleanCode);
+
+      if (found) {
+        document.getElementById('form-referencia').value = found.referencia || '';
+        document.getElementById('form-cod-molde').value = found.codMolde || '';
+        
+        statusEl.innerText = '✓ Artículo y Molde encontrados (BUSCAR V)';
+        statusEl.className = 'text-[10px] text-emerald-600 font-bold';
+      } else {
+        statusEl.innerText = '⚠️ Código no encontrado en maestro (Modo manual)';
+        statusEl.className = 'text-[10px] text-amber-600 font-medium';
+      }
+    }
+
+    function populateArticlesDatalist() {
+      const datalist = document.getElementById('articles-list-options');
+      if (!datalist) return;
+      datalist.innerHTML = articlesMaster.map(a => 
+        `<option value="${a.codArticulo}">${a.referencia} [Molde: ${a.codMolde}]</option>`
+      ).join('');
+    }
+
+    function importArticlesExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          if (json.length < 2) {
+            showToast('El archivo Excel está vacío o no tiene encabezados.', 'error');
+            return;
+          }
+
+          let addedCount = 0;
+          // Asumimos encabezados o buscamos columnas relevantes
+          for (let i = 1; i < json.length; i++) {
+            const row = json[i];
+            if (!row || row.length === 0) continue;
+
+            const code = String(row[0] || '').trim();
+            const desc = String(row[1] || '').trim();
+            const mold = String(row[2] || '').trim();
+
+            if (code) {
+              const existingIdx = articlesMaster.findIndex(a => a.codArticulo.toLowerCase() === code.toLowerCase());
+              if (existingIdx >= 0) {
+                articlesMaster[existingIdx] = { codArticulo: code, referencia: desc, codMolde: mold };
+              } else {
+                articlesMaster.push({ codArticulo: code, referencia: desc, codMolde: mold });
+              }
+              addedCount++;
+            }
+          }
+
+          saveArticlesMaster();
+          showToast(`Se cargaron ${addedCount} artículos correctamente al maestro.`);
+        } catch (err) {
+          showToast('Error al leer el Excel. Verifique el formato.', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderArticlesMasterTable() {
+      const tbody = document.getElementById('articles-master-table-body');
+      const searchVal = (document.getElementById('articles-search-input')?.value || '').toLowerCase().trim();
+      const countEl = document.getElementById('articles-count');
+      
+      if (countEl) countEl.innerText = articlesMaster.length;
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+
+      const filtered = articlesMaster.filter(a => 
+        a.codArticulo.toLowerCase().includes(searchVal) ||
+        a.referencia.toLowerCase().includes(searchVal) ||
+        a.codMolde.toLowerCase().includes(searchVal)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No hay artículos registrados.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((art, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700/50';
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-brand-600 dark:text-brand-400">${art.codArticulo}</td>
+          <td class="p-2.5 text-slate-800 dark:text-slate-200">${art.referencia}</td>
+          <td class="p-2.5 font-semibold text-slate-600 dark:text-slate-400">${art.codMolde}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="removeArticleMaster(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function removeArticleMaster(idx) {
+      articlesMaster.splice(idx, 1);
+      saveArticlesMaster();
+    }
+
+    function openAddArticleModal() { document.getElementById('modal-add-article').classList.remove('hidden'); }
+    function closeAddArticleModal() { document.getElementById('modal-add-article').classList.add('hidden'); }
+    
+    function handleAddArticleManual() {
+      const code = document.getElementById('new-art-code').value.trim();
+      const desc = document.getElementById('new-art-desc').value.trim();
+      const mold = document.getElementById('new-art-mold').value.trim();
+
+      if (code && desc) {
+        const existingIdx = articlesMaster.findIndex(a => a.codArticulo.toLowerCase() === code.toLowerCase());
+        if (existingIdx >= 0) {
+          articlesMaster[existingIdx] = { codArticulo: code, referencia: desc, codMolde: mold };
+        } else {
+          articlesMaster.push({ codArticulo: code, referencia: desc, codMolde: mold });
+        }
+        saveArticlesMaster();
+        closeAddArticleModal();
+        document.getElementById('new-art-code').value = '';
+        document.getElementById('new-art-desc').value = '';
+        document.getElementById('new-art-mold').value = '';
+        showToast('Artículo registrado en maestro.');
+      } else {
+        showToast('Complete el código y la referencia.', 'error');
+      }
+    }
+
+    // --- 5. RENDERIZADO PLANTA EN VIVO ---
     function renderStats() {
       let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0 };
 
@@ -1036,10 +1285,12 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       return `Hace ${diffDays}d`;
     }
 
-    // --- 5. MODAL DE REGISTRO Y GUARDADO ---
+    // --- 6. MODAL DE REGISTRO Y GUARDADO ---
     function openReportModal(machineId) {
       const machine = machinesList.find(m => m.id === machineId);
       if (!machine) return;
+
+      populateArticlesDatalist();
 
       const rep = currentPlantState[machineId] || {};
 
@@ -1054,6 +1305,14 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       document.getElementById('form-cod-articulo').value = rep.codArticulo || "";
       document.getElementById('form-cod-molde').value = rep.codMolde || "";
       document.getElementById('form-observaciones').value = rep.observaciones || "";
+
+      // Si ya hay un código de artículo precargado, probar el VLOOKUP
+      if (rep.codArticulo) {
+        triggerVLookupArticle(rep.codArticulo);
+      } else {
+        document.getElementById('vlookup-status').innerText = 'Escriba el código para autocompletar';
+        document.getElementById('vlookup-status').className = 'text-[10px] text-slate-500 italic';
+      }
 
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1070,6 +1329,19 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       e.preventDefault();
 
       const machineId = document.getElementById('form-machine-id').value;
+      const codArt = document.getElementById('form-cod-articulo').value.trim();
+      const refDesc = document.getElementById('form-referencia').value.trim();
+      const codMold = document.getElementById('form-cod-molde').value.trim();
+
+      // Guardado dinámico en la base maestro si es un artículo nuevo
+      if (codArt && refDesc) {
+        const existingIdx = articlesMaster.findIndex(a => a.codArticulo.toLowerCase() === codArt.toLowerCase());
+        if (existingIdx === -1) {
+          articlesMaster.push({ codArticulo: codArt, referencia: refDesc, codMolde: codMold });
+          saveArticlesMaster();
+        }
+      }
+
       const newReport = {
         id: 'rep-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
         machineId: machineId,
@@ -1077,9 +1349,9 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
         turno: document.getElementById('form-turno').value,
         estado: document.getElementById('form-estado').value,
         presion: document.getElementById('form-presion').value,
-        referencia: document.getElementById('form-referencia').value,
-        codArticulo: document.getElementById('form-cod-articulo').value,
-        codMolde: document.getElementById('form-cod-molde').value,
+        referencia: refDesc,
+        codArticulo: codArt,
+        codMolde: codMold,
         observaciones: document.getElementById('form-observaciones').value,
         datetime: new Date(document.getElementById('form-datetime').value).toISOString()
       };
@@ -1104,7 +1376,6 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
     }
 
     function finalizeAndSaveTurn() {
-      // Guarda una captura estática de todas las máquinas actuales en el historial masivo
       const timestamp = new Date().toISOString();
       let savedCount = 0;
 
@@ -1126,7 +1397,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       showToast(`Se ha guardado el cierre completo del turno (${savedCount} tarjetas respaldadas).`);
     }
 
-    // --- 6. SECCIÓN DE HISTORIAL DE REPORTES ---
+    // --- 7. SECCIÓN DE HISTORIAL DE REPORTES ---
     function populateHistoryFilterDropdowns() {
       const mSelect = document.getElementById('hist-filter-machine');
       mSelect.innerHTML = '<option value="todas">Todas las Máquinas</option>' +
@@ -1146,21 +1417,16 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       const searchFilter = document.getElementById('hist-filter-search').value.toLowerCase().trim();
 
       const filtered = historyLogs.filter(log => {
-        // Filtro Fecha Desde
         if (fromDate) {
           const logDate = log.datetime.slice(0, 10);
           if (logDate < fromDate) return false;
         }
-        // Filtro Fecha Hasta
         if (toDate) {
           const logDate = log.datetime.slice(0, 10);
           if (logDate > toDate) return false;
         }
-        // Filtro Máquina
         if (machineFilter !== 'todas' && log.machineId !== machineFilter) return false;
-        // Filtro Responsable
         if (staffFilter !== 'todos' && log.responsable !== staffFilter) return false;
-        // Búsqueda Texto
         if (searchFilter) {
           const matchRef = (log.referencia || '').toLowerCase().includes(searchFilter);
           const matchMolde = (log.codMolde || '').toLowerCase().includes(searchFilter);
@@ -1254,18 +1520,17 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       }
     }
 
-    // --- 7. EXPORTACIÓN OFICIAL DE EXCEL (FORMATO FR-PRO-12 / VERSIÓN 1 / FECHA: JULIO 26 DE 2025) ---
+    // --- 8. EXPORTACIÓN OFICIAL DE EXCEL ---
     function exportHistoryExcel() {
       if (typeof XLSX === 'undefined') {
         showToast('Cargando motor de Excel...', 'error');
         return;
       }
 
-      // Estructurar filas con formato oficial solicitado
       const data = [
         ["INFORME DE TURNO DE PLANTA DE INYECCIÓN DE PLÁSTICOS"],
         ["CODIGO: FR-PRO-12", "VERSIÓN: 1", "FECHA: Julio 26 de 2025"],
-        [], // Renglón de separación
+        [],
         ["ID Registro", "Fecha y Hora", "Turno", "Máquina", "Estado", "Código Molde", "Código Artículo", "Referencia Producto", "Presión Cierre", "Responsable / Operador", "Observaciones y Novedades"]
       ];
 
@@ -1289,7 +1554,6 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "FR-PRO-12");
 
-      // Ajustes de anchos de columna para visualización profesional
       ws['!cols'] = [
         { wch: 15 }, { wch: 20 }, { wch: 22 }, { wch: 12 }, { wch: 18 },
         { wch: 14 }, { wch: 14 }, { wch: 38 }, { wch: 15 }, { wch: 32 }, { wch: 45 }
@@ -1300,7 +1564,6 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
     }
 
     function exportHistoryCSV() {
-      // CSV en UTF-8 con BOM para asegurar compatibilidad completa con tildes y caracteres especiales en Excel
       let csvContent = "\uFEFF";
       csvContent += "CODIGO: FR-PRO-12,VERSIÓN: 1,FECHA: Julio 26 de 2025\n\n";
       csvContent += "ID,FechaHora,Turno,Maquina,Estado,Molde,Articulo,Referencia,Presion,Responsable,Observaciones\n";
@@ -1332,14 +1595,15 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       document.body.removeChild(link);
     }
 
-    // --- 8. MÓDULO BACKUP JSON ---
+    // --- 9. MÓDULO BACKUP JSON ---
     function exportJSONBackup() {
       const backupData = {
         app: "InjectionPro",
-        version: "3.0",
+        version: "3.5",
         exportDate: new Date().toISOString(),
         staff: staffList,
         machines: machinesList,
+        articlesMaster: articlesMaster,
         plantState: currentPlantState,
         historyLogs: historyLogs
       };
@@ -1365,11 +1629,13 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
           if (imported.staff && imported.machines && imported.historyLogs) {
             staffList = imported.staff;
             machinesList = imported.machines;
+            articlesMaster = imported.articlesMaster || DEFAULT_ARTICLES_MASTER;
             currentPlantState = imported.plantState || {};
             historyLogs = imported.historyLogs;
 
             saveStaffList();
             saveMachinesList();
+            saveArticlesMaster();
             savePlantState();
             saveHistoryLogs();
 
@@ -1386,7 +1652,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       reader.readAsText(file);
     }
 
-    // --- 9. MAESTROS & CONFIGURACIÓN DE OPERADORES Y MÁQUINAS ---
+    // --- 10. MAESTROS & CONFIGURACIÓN DE OPERADORES Y MÁQUINAS ---
     function populateFormDropdowns() {
       const select = document.getElementById('form-responsable');
       select.innerHTML = staffList.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -1465,7 +1731,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
       }
     }
 
-    // --- 10. WHATSAPP GENERATION & SINGLE LOG COPY ---
+    // --- 11. WHATSAPP GENERATION & SINGLE LOG COPY ---
     function openWhatsAppModal() {
       generateWhatsAppText();
       document.getElementById('modal-whatsapp').classList.remove('hidden');
@@ -1542,7 +1808,7 @@ cha:* ${dateStr}\n-----------------------------------\n\n`;
     function openWebAccessModal() { document.getElementById('modal-web-access').classList.remove('hidden'); }
     function closeWebAccessModal() { document.getElementById('modal-web-access').classList.add('hidden'); }
 
-    // --- 11. CONTROLES NAVEGACIÓN DE PESTAÑAS Y UTILIDADES ---
+    // --- 12. CONTROLES NAVEGACIÓN DE PESTAÑAS Y UTILIDADES ---
     function switchTab(tab) {
       document.getElementById('tab-content-planta').classList.add('hidden');
       document.getElementById('tab-content-historial').classList.add('hidden');
