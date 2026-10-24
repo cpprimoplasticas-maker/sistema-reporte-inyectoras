@@ -1,0 +1,1587 @@
+cha:* ${dateStr}\n-----------------------------------\n\n`;
+
+      machinesList.forEach(m => {
+        const r = currentPlantState[m.id];
+        const estado = r?.estado || 'Parada Prioridad';
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Control y Reporte de Turnos - Planta Inyección</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#035485',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SheetJS / XLSX for Official Excel Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    .nav-tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: 700; }
+    .dark .nav-tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
+  </style>
+</head>
+<body class="h-full text-slate-800 dark:text-slate-100 dark:bg-slate-900 flex flex-col min-h-screen transition-colors duration-200">
+
+  <!-- HEADER NAVEGACIÓN PRINCIPAL -->
+  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo Marca -->
+        <div class="flex items-center space-x-3">
+          <div class="bg-gradient-to-tr from-brand-600 to-brand-500 text-white p-2.5 rounded-xl shadow-lg flex items-center justify-center">
+            <i class="fa-solid fa-industry text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="font-black text-lg leading-tight tracking-wider text-white">INJECTION <span class="text-brand-400">PRO</span></h1>
+              <span class="text-[10px] bg-brand-900/80 text-brand-300 font-bold px-2 py-0.5 rounded border border-brand-700">FR-PRO-12 V1</span>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">Control de Planta & Registro Histórico</p>
+          </div>
+        </div>
+
+        <!-- Acciones Principales Header -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <button onclick="openWebAccessModal()" title="¿Cómo publicar en Web?" class="inline-flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition-all cursor-pointer">
+            <i class="fa-solid fa-globe text-brand-400"></i>
+            <span class="hidden sm:inline">Acceso Web / Hosting</span>
+          </button>
+
+          <button onclick="toggleDarkMode()" title="Cambiar Tema Oscuro/Claro" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+            <i class="fa-solid fa-moon text-lg dark:hidden"></i>
+            <i class="fa-solid fa-sun text-lg hidden dark:block text-amber-400"></i>
+          </button>
+
+          <button onclick="openWhatsAppModal()" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition-all shadow-md hover:shadow-emerald-900/20 cursor-pointer">
+            <i class="fa-brands fa-whatsapp text-base"></i>
+            <span class="hidden md:inline">Reporte WhatsApp</span>
+          </button>
+          
+          <button onclick="finalizeAndSaveTurn()" class="inline-flex items-center space-x-2 bg-brand-600 hover:bg-brand-500 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl transition-all shadow-md hover:shadow-brand-900/20 cursor-pointer">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Guardar Turno Completo</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- SECCIONES / PESTAÑAS DE NAVEGACIÓN -->
+      <nav class="flex space-x-6 border-t border-slate-800 text-sm font-medium mt-1">
+        <button onclick="switchTab('planta')" id="nav-planta" class="py-3 px-1 text-slate-300 hover:text-white transition-colors cursor-pointer nav-tab-active flex items-center space-x-2">
+          <i class="fa-solid fa-border-all"></i>
+          <span>Planta en Vivo</span>
+          <span id="badge-total-machines" class="ml-1 px-2 py-0.5 text-xs bg-slate-800 rounded-full text-slate-300">0</span>
+        </button>
+
+        <button onclick="switchTab('historial')" id="nav-historial" class="py-3 px-1 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Historial de Reportes</span>
+          <span id="badge-total-history" class="ml-1 px-2 py-0.5 text-xs bg-brand-900/80 text-brand-300 font-bold rounded-full">0</span>
+        </button>
+
+        <button onclick="switchTab('maestros')" id="nav-maestros" class="py-3 px-1 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Gestión & Maestros</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 1: PLANTA EN VIVO (CUADRÍCULA) -->
+    <!-- ========================================== -->
+    <div id="tab-content-planta" class="space-y-6">
+      
+      <!-- Indicadores de Planta -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <i class="fa-solid fa-circle-play text-xl"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Operativas / Prod.</p>
+            <p id="stat-produccion" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
+            <i class="fa-solid fa-wrench text-xl"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">En Montaje</p>
+            <p id="stat-montaje" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-xl">
+            <i class="fa-solid fa-circle-pause text-xl"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Parada Prioridad</p>
+            <p id="stat-parada" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl">
+            <i class="fa-solid fa-palette text-xl"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Cambio de Color</p>
+            <p id="stat-color" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl">
+            <i class="fa-solid fa-gears text-xl"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">En Mantenimiento</p>
+            <p id="stat-taller" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Búsqueda y Filtro de Estados -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <div class="flex items-center overflow-x-auto pb-2 md:pb-0 space-x-1.5 text-xs font-semibold">
+          <button onclick="setPlantaFilter('todas')" id="pfilter-todas" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors active-ptab">
+            Todas (<span id="pcount-todas">0</span>)
+          </button>
+          <button onclick="setPlantaFilter('Operativa')" id="pfilter-Operativa" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            🟢 Operativas (<span id="pcount-operativa">0</span>)
+          </button>
+          <button onclick="setPlantaFilter('En Montaje')" id="pfilter-En Montaje" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            🟠 Montaje (<span id="pcount-montaje">0</span>)
+          </button>
+          <button onclick="setPlantaFilter('Parada Prioridad')" id="pfilter-Parada Prioridad" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            🔴 Paradas (<span id="pcount-parada">0</span>)
+          </button>
+          <button onclick="setPlantaFilter('Cambio de Color')" id="pfilter-Cambio de Color" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            🟣 Cambio Color (<span id="pcount-color">0</span>)
+          </button>
+          <button onclick="setPlantaFilter('Mantenimiento / Taller')" id="pfilter-Mantenimiento / Taller" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            ⚪ Mantenimiento (<span id="pcount-taller">0</span>)
+          </button>
+        </div>
+
+        <div class="relative w-full md:w-80">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="planta-search" oninput="renderMachinesGrid()" placeholder="Buscar por máquina, molde, producto..." class="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+        </div>
+
+      </div>
+
+      <!-- Cuadrícula de Tarjetas de Máquinas -->
+      <div id="machines-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Renderizado dinámico -->
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 2: HISTORIAL DE REPORTES COMPLETO -->
+    <!-- ========================================== -->
+    <div id="tab-content-historial" class="space-y-6 hidden">
+      
+      <!-- Panel de Control y Filtros del Historial -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700 pb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center space-x-2">
+              <i class="fa-solid fa-clock-rotate-left text-brand-500"></i>
+              <span>Auditoría e Historial de Turnos</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Consulte, filtre y exporte todos los reportes individuales guardados.</p>
+          </div>
+
+          <!-- Acciones en el historial -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="exportHistoryExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Exportar Excel Oficial</span>
+            </button>
+
+            <button onclick="exportHistoryCSV()" class="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>CSV</span>
+            </button>
+
+            <button onclick="clearAllHistory()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-300 text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>Limpiar Historial</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros Combinados -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Fecha Desde</label>
+            <input type="date" id="hist-filter-from" onchange="renderHistorySection()" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Fecha Hasta</label>
+            <input type="date" id="hist-filter-to" onchange="renderHistorySection()" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Máquina</label>
+            <select id="hist-filter-machine" onchange="renderHistorySection()" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+              <option value="todas">Todas las Máquinas</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Responsable</label>
+            <select id="hist-filter-staff" onchange="renderHistorySection()" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 bg-slate-50 dark:bg-slate-900">
+              <option value="todos">Todos los Responsables</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Búsqueda Rápida</label>
+            <div class="relative">
+              <input type="text" id="hist-filter-search" oninput="renderHistorySection()" placeholder="Ref, Molde, Obs..." class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2 pr-7 bg-slate-50 dark:bg-slate-900">
+              <button onclick="resetHistoryFilters()" title="Limpiar Filtros" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Contador de Registros -->
+      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+        <span>Mostrando <strong id="hist-showing-count" class="text-slate-800 dark:text-slate-200">0</strong> registros filtrados</span>
+        <span class="italic">* Haga clic en "Cargar en Tarjeta" para restaurar valores históricos a la planta.</span>
+      </div>
+
+      <!-- Tabla / Lista de Tarjetas del Historial -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 uppercase font-semibold text-[11px] tracking-wider">
+                <th class="p-3">Fecha / Hora</th>
+                <th class="p-3">Máquina</th>
+                <th class="p-3">Estado</th>
+                <th class="p-3">Referencia</th>
+                <th class="p-3">Molde / Art.</th>
+                <th class="p-3">Presión</th>
+                <th class="p-3">Responsable</th>
+                <th class="p-3">Novedades / Observaciones</th>
+                <th class="p-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 3: GESTIÓN & MAESTROS (CONFIGURACIÓN) -->
+    <!-- ========================================== -->
+    <div id="tab-content-maestros" class="space-y-6 hidden">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Maestro de Personal -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center space-x-2">
+                <i class="fa-solid fa-users text-brand-500"></i>
+                <span>Catálogo de Operadores / Personal</span>
+              </h3>
+              <p class="text-xs text-slate-500">Personal habilitado para firmar reportes de turno</p>
+            </div>
+            <button onclick="openAddStaffModal()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+              <i class="fa-solid fa-plus mr-1"></i> Añadir
+            </button>
+          </div>
+
+          <div id="staff-list-container" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+
+        <!-- Maestro de Máquinas -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+            <div>
+              <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center space-x-2">
+                <i class="fa-solid fa-cubes-stacked text-brand-500"></i>
+                <span>Parque de Máquinas Inyectoras</span>
+              </h3>
+              <p class="text-xs text-slate-500">Equipos configurados en la planta</p>
+            </div>
+            <button onclick="openAddMachineModal()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+              <i class="fa-solid fa-plus mr-1"></i> Añadir
+            </button>
+          </div>
+
+          <div id="machines-list-container" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Módulo Backup Local JSON -->
+      <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-bold text-base flex items-center space-x-2">
+              <i class="fa-solid fa-database text-brand-400"></i>
+              <span>Copia de Seguridad y Resguardo de Datos (Backup JSON)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Exporte o importe toda la base de datos (máquinas, historial, operadores) para trasladarla entre computadores o tabletas.</p>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <button onclick="exportJSONBackup()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer">
+              <i class="fa-solid fa-download"></i>
+              <span>Exportar Backup JSON</span>
+            </button>
+
+            <label class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center space-x-2">
+              <i class="fa-solid fa-upload text-brand-400"></i>
+              <span>Restaurar / Importar</span>
+              <input type="file" id="import-json-file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: ACTUALIZAR REPORTE DE MÁQUINA -->
+  <!-- ========================================== -->
+  <div id="modal-report" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="bg-brand-500 text-white font-black px-2.5 py-1 rounded-xl text-lg" id="modal-machine-id">
+            88
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Actualizar Reporte de Turno</h3>
+            <p class="text-xs text-slate-400">Formato Estándar FR-PRO-12</p>
+          </div>
+        </div>
+        <button onclick="closeReportModal()" class="text-slate-400 hover:text-white transition-colors text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="report-form" onsubmit="handleReportSubmit(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-slate-800 dark:text-slate-100">
+        
+        <input type="hidden" id="form-machine-id">
+
+        <!-- Responsable & Turno -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Responsable del Turno *</label>
+            <select id="form-responsable" required class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+              <!-- Dinámico -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Turno *</label>
+            <select id="form-turno" required class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+              <option value="Turno 1 (06:00 - 14:00)">Turno 1 (06:00 - 14:00)</option>
+              <option value="Turno 2 (14:00 - 22:00)">Turno 2 (14:00 - 22:00)</option>
+              <option value="Turno 3 (22:00 - 06:00)">Turno 3 (22:00 - 06:00)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Estado Máquina & Presión de Cierre -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Estado de la Máquina *</label>
+            <select id="form-estado" required class="w-full text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+              <option value="Operativa" class="text-emerald-600 font-bold">🟢 Operativa / En Producción</option>
+              <option value="En Montaje" class="text-amber-600 font-bold">🟠 En Montaje / Ajuste</option>
+              <option value="Parada Prioridad" class="text-rose-600 font-bold">🔴 Parada por Prioridad / Falta Componentes</option>
+              <option value="Cambio de Color" class="text-purple-600 font-bold">🟣 Cambio de Color / Limpieza</option>
+              <option value="Mantenimiento / Taller" class="text-slate-600 font-bold">⚪ En Mantenimiento / Taller Molde</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Presión de Cierre (Ton/PSI)</label>
+            <input type="text" id="form-presion" placeholder="ej. 140 Ton / 160 PSI" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+          </div>
+        </div>
+
+        <!-- Referencia Producto -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Referencia / Descripción Comercial *</label>
+          <input type="text" id="form-referencia" required placeholder="ej. Envase 500/1000 cc alimentos alimentos blanco" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+        </div>
+
+        <!-- Código Artículo & Código Molde -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Artículo</label>
+            <input type="text" id="form-cod-articulo" placeholder="ej. ART-8802" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Código Molde</label>
+            <input type="text" id="form-cod-molde" placeholder="ej. M-402-B" class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
+          </div>
+        </div>
+
+        <!-- Fecha y Hora -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha y Hora del Reporte *</label>
+          <input type="datetime-local" id="form-datetime" required class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900">
+        </div>
+
+        <!-- Observaciones / Novedades -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Novedades y Observaciones de Planta</label>
+          <textarea id="form-observaciones" rows="3" placeholder="Indique porcentajes de mezcla, limpiezas de tolva, causas de parada o estado de moldes..." class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900"></textarea>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-xs bg-brand-600 hover:bg-brand-500 text-white font-bold transition-all shadow-md flex items-center space-x-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Guardar Reporte en Historial</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: COMPARTIR REPORTE POR WHATSAPP -->
+  <!-- ========================================== -->
+  <div id="modal-whatsapp" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      
+      <div class="bg-emerald-700 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <i class="fa-brands fa-whatsapp text-2xl text-emerald-300"></i>
+          <div>
+            <h3 class="font-bold text-base">Consolidado de Planta para WhatsApp</h3>
+            <p class="text-xs text-emerald-100">Formato rápido para el grupo operativo</p>
+          </div>
+        </div>
+        <button onclick="closeWhatsAppModal()" class="text-emerald-200 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 flex-1 overflow-y-auto space-y-4">
+        
+        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Filtrar estado de máquinas:</span>
+          <select id="wa-filter-status" onchange="generateWhatsAppText()" class="text-xs border border-slate-300 dark:border-slate-600 rounded-lg p-1.5 bg-white dark:bg-slate-800 font-medium">
+            <option value="todas">Todas las máquinas</option>
+            <option value="Operativa">Solo Operativas</option>
+            <option value="En Montaje">Solo En Montaje</option>
+            <option value="Paradas">Solo Paradas / Taller</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vista Previa del Texto Formateado:</label>
+          <textarea id="wa-preview-text" rows="12" class="w-full text-xs font-mono bg-slate-900 text-emerald-400 p-4 rounded-xl border border-slate-800 focus:outline-none leading-relaxed shadow-inner" readonly></textarea>
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <button onclick="copyWhatsAppToClipboard()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+          <i class="fa-regular fa-copy mr-1"></i> Copiar Texto
+        </button>
+
+        <button onclick="sendWhatsAppDirect()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-colors shadow-md flex items-center space-x-2">
+          <i class="fa-brands fa-whatsapp text-lg"></i>
+          <span>Abrir Aplicación WhatsApp</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: AÑADIR OPERADOR -->
+  <div id="modal-add-staff" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-3">Registrar Nuevo Operador</h3>
+      <input type="text" id="new-staff-name" placeholder="Nombre completo del responsable..." class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900 mb-4">
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeAddStaffModal()" class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400">Cancelar</button>
+        <button onclick="handleAddStaff()" class="px-4 py-1.5 text-xs bg-brand-600 text-white rounded-xl font-bold">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AÑADIR MÁQUINA -->
+  <div id="modal-add-machine" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700">
+      <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm mb-3">Registrar Nueva Máquina Inyectora</h3>
+      <input type="text" id="new-machine-name" placeholder="ej. 600-1 o Inyectora 15..." class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-900 mb-4">
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeAddMachineModal()" class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400">Cancelar</button>
+        <button onclick="handleAddMachine()" class="px-4 py-1.5 text-xs bg-brand-600 text-white rounded-xl font-bold">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GUÍA DE ACCESO Y PUBLICACIÓN WEB -->
+  <div id="modal-web-access" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden text-slate-800 dark:text-slate-100">
+      
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-globe text-brand-400 text-xl"></i>
+          <div>
+            <h3 class="font-bold text-base">¿Cómo acceder a esta app en una web?</h3>
+            <p class="text-xs text-slate-400">Opciones gratuitas para publicar e ingresar desde cualquier celular, PC o tablet</p>
+          </div>
+        </div>
+        <button onclick="closeWebAccessModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 text-xs">
+        
+        <p class="text-slate-600 dark:text-slate-300">
+          Esta aplicación está diseñada en <strong>un solo archivo independiente (HTML/JS)</strong>, lo que significa que no necesita servidores complejos ni bases de datos para funcionar.
+        </p>
+
+        <div class="space-y-3">
+          <!-- Opción 1 -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div class="font-bold text-brand-600 dark:text-brand-400 flex items-center space-x-2 text-sm mb-1">
+              <i class="fa-brands fa-github"></i>
+              <span>Opción 1: GitHub Pages (Gratuito y Oficial)</span>
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-300">
+              <li>Guarda el código de esta app como un archivo llamado <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">index.html</code>.</li>
+              <li>Crea una cuenta en <strong class="text-slate-800 dark:text-slate-200">GitHub.com</strong> y crea un nuevo repositorio público.</li>
+              <li>Sube el archivo <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">index.html</code>.</li>
+              <li>Ve a <em>Settings → Pages</em>, elige la rama <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">main</code> y guarda.</li>
+              <li>¡Listo! Te dará un enlace permanente tipo <code class="text-brand-500 font-mono">https://tu-usuario.github.io/tu-repo</code>.</li>
+            </ol>
+          </div>
+
+          <!-- Opción 2 -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 text-sm mb-1">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Opción 2: Netlify Drop (Arrastrar y Soltar - 30 segundos)</span>
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-300">
+              <li>Guarda el código como <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">index.html</code> y colócalo dentro de una carpeta.</li>
+              <li>Ingresa a <strong class="text-slate-800 dark:text-slate-200">app.netlify.com/drop</strong>.</li>
+              <li>Arrastra la carpeta a la página web y en pocos segundos obtendrás un enlace público activo.</li>
+            </ol>
+          </div>
+
+          <!-- Opción 3 -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div class="font-bold text-purple-600 dark:text-purple-400 flex items-center space-x-2 text-sm mb-1">
+              <i class="fa-solid fa-network-wired"></i>
+              <span>Opción 3: Red Local / Intranet de Planta</span>
+            </div>
+            <p class="text-slate-600 dark:text-slate-300">
+              Si prefieren que solo funcione dentro de la empresa, pueden colocar el archivo <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">index.html</code> en una carpeta compartida de la red local o en un servidor web interno (IIS, Nginx o Apache).
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        <button onclick="closeWebAccessModal()" class="bg-brand-600 text-white font-bold px-4 py-2 rounded-xl text-xs">Entendido</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- SCRIPT LÓGICA PRINCIPAL -->
+  <script>
+    // --- 1. CATÁLOGOS INICIALES BASADOS EN EL DATALOGGER DE PLANTA Y LA TABLA ENVIADA ---
+    const DEFAULT_STAFF = [
+      "16 - HAROLD BETANCUR POSSO",
+      "179 - JUAN CAMILO ZAPATA LONDOÑO",
+      "815 - JUAN FERNANDO BARRENECHE CALLEJAS",
+      "106 - OMAR DE JESUS RUIZ TORRES",
+      "239 - CARLOS ANDRES BRAVO BALLESTA",
+      "399 - CARLOS ANDRES MUÑOZ ARANGO",
+      "213 - CRISTIAN POSADA RAMIREZ",
+      "482 - JUAN ANDRES ZAPATA SANCHEZ"
+    ];
+
+    // Lista exacta de las 29 máquinas sin numeración secuencial
+    const DEFAULT_MACHINES = [
+      { id: "650-2", name: "Inyectora 650-2" },
+      { id: "850", name: "Inyectora 850" },
+      { id: "900", name: "Inyectora 900" },
+      { id: "880-3", name: "Inyectora 880-3" },
+      { id: "680-3", name: "Inyectora 680-3" },
+      { id: "320", name: "Inyectora 320" },
+      { id: "880", name: "Inyectora 880" },
+      { id: "880-2", name: "Inyectora 880-2" },
+      { id: "1080", name: "Inyectora 1080" },
+      { id: "680", name: "Inyectora 680" },
+      { id: "680-2", name: "Inyectora 680-2" },
+      { id: "400", name: "Inyectora 400" },
+      { id: "1600", name: "Inyectora 1600" },
+      { id: "168", name: "Inyectora 168" },
+      { id: "650", name: "Inyectora 650" },
+      { id: "168-2", name: "Inyectora 168-2" },
+      { id: "218", name: "Inyectora 218" },
+      { id: "128-2", name: "Inyectora 128-2" },
+      { id: "268-2", name: "Inyectora 268-2" },
+      { id: "128", name: "Inyectora 128" },
+      { id: "320-2", name: "Inyectora 320-2" },
+      { id: "168-3", name: "Inyectora 168-3" },
+      { id: "500-2", name: "Inyectora 500-2" },
+      { id: "268", name: "Inyectora 268" },
+      { id: "88", name: "Inyectora 88" },
+      { id: "320-3", name: "Inyectora 320-3" },
+      { id: "480", name: "Inyectora 480" },
+      { id: "128-3", name: "Inyectora 128-3" },
+      { id: "2000", name: "Inyectora 2000" }
+    ];
+
+    const INITIAL_REPORTS = [
+      {
+        id: "rep-001",
+        machineId: "88",
+        responsable: "213 - CRISTIAN POSADA RAMIREZ",
+        turno: "Turno 1 (06:00 - 14:00)",
+        estado: "Operativa",
+        presion: "140 Ton / 160 PSI",
+        codArticulo: "ART-8802",
+        codMolde: "M-102",
+        referencia: "Envase 500/1000 cc alimentos blanco",
+        observaciones: "Trabajando con 70% virgen y 30% recuperado. Parámetros estables.",
+        datetime: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
+      },
+      {
+        id: "rep-002",
+        machineId: "128-2",
+        responsable: "16 - HAROLD BETANCUR POSSO",
+        turno: "Turno 1 (06:00 - 14:00)",
+        estado: "En Montaje",
+        presion: "180 Ton",
+        codArticulo: "ART-990",
+        codMolde: "M-408-A",
+        referencia: "Recipiente click rectangular transparente",
+        observaciones: "En montaje de molde. Ajustando mangueras de agua de refrigeración.",
+        datetime: new Date(Date.now() - 5 * 3600 * 1000).toISOString()
+      },
+      {
+        id: "rep-003",
+        machineId: "218",
+        responsable: "179 - JUAN CAMILO ZAPATA LONDOÑO",
+        turno: "Turno 3 (22:00 - 06:00)",
+        estado: "Parada Prioridad",
+        presion: "--",
+        codArticulo: "PAP-01",
+        codMolde: "M-PAP-V",
+        referencia: "Papelera vaivén fantasía azul",
+        observaciones: "Máquina parada por falta de manijas rojas para ensamble.",
+        datetime: new Date(Date.now() - 26 * 3600 * 1000).toISOString()
+      },
+      {
+        id: "rep-004",
+        machineId: "400",
+        responsable: "106 - OMAR DE JESUS RUIZ TORRES",
+        turno: "Turno 2 (14:00 - 22:00)",
+        estado: "Mantenimiento / Taller",
+        presion: "400 Ton",
+        codArticulo: "CAJ-30",
+        codMolde: "M-CAJ-30",
+        referencia: "Caja agrícola calada reforzada",
+        observaciones: "Molde bajado a taller de mantenimiento por rebaba en expulsores.",
+        datetime: new Date(Date.now() - 48 * 3600 * 1000).toISOString()
+      }
+    ];
+
+    // --- 2. ESTADO GLOBAL DE LA APLICACIÓN ---
+    let staffList = [];
+    let machinesList = [];
+    let currentPlantState = {}; // Tarjeta viva de la máquina -> Último reporte
+    let historyLogs = [];       // Vector persistente con TODOS los reportes generados
+    let activePlantaFilter = 'todas';
+
+    // --- 3. INICIALIZACIÓN Y PERSISTENCIA (LOCAL STORAGE) ---
+    function initApp() {
+      // 1. Cargar Staff
+      const storedStaff = localStorage.getItem('inj_staff');
+      staffList = storedStaff ? JSON.parse(storedStaff) : [...DEFAULT_STAFF];
+
+      // 2. Cargar Máquinas
+      const storedMachines = localStorage.getItem('inj_machines');
+      machinesList = storedMachines ? JSON.parse(storedMachines) : [...DEFAULT_MACHINES];
+
+      // 3. Cargar Historial
+      const storedHistory = localStorage.getItem('inj_history_logs');
+      if (storedHistory) {
+        historyLogs = JSON.parse(storedHistory);
+      } else {
+        historyLogs = [...INITIAL_REPORTS];
+        localStorage.setItem('inj_history_logs', JSON.stringify(historyLogs));
+      }
+
+      // 4. Cargar o Reconstruir Estado Actual de Planta (Conserva la última condición de cada máquina)
+      const storedPlant = localStorage.getItem('inj_current_plant');
+      if (storedPlant) {
+        currentPlantState = JSON.parse(storedPlant);
+      } else {
+        // Reconstruir tomando la última novedad de cada máquina en el historial
+        rebuildPlantStateFromHistory();
+      }
+
+      // Cargar modo oscuro previo si existe
+      if (localStorage.getItem('inj_dark_mode') === 'true') {
+        document.documentElement.classList.add('dark');
+      }
+
+      // Renderizar la interfaz
+      populateFormDropdowns();
+      renderStats();
+      renderMachinesGrid();
+      renderStaffList();
+      renderMachinesMasterList();
+      populateHistoryFilterDropdowns();
+    }
+
+    function rebuildPlantStateFromHistory() {
+      currentPlantState = {};
+      machinesList.forEach(m => {
+        // Buscar el reporte más reciente para esta máquina en el historial
+        const lastReport = historyLogs.find(r => r.machineId === m.id);
+        if (lastReport) {
+          currentPlantState[m.id] = { ...lastReport };
+        } else {
+          currentPlantState[m.id] = {
+            machineId: m.id,
+            estado: "Parada Prioridad",
+            referencia: "Sin producción activa",
+            datetime: new Date().toISOString()
+          };
+        }
+      });
+      savePlantState();
+    }
+
+    function savePlantState() {
+      localStorage.setItem('inj_current_plant', JSON.stringify(currentPlantState));
+    }
+
+    function saveHistoryLogs() {
+      localStorage.setItem('inj_history_logs', JSON.stringify(historyLogs));
+      document.getElementById('badge-total-history').innerText = historyLogs.length;
+    }
+
+    function saveStaffList() {
+      localStorage.setItem('inj_staff', JSON.stringify(staffList));
+      populateFormDropdowns();
+      renderStaffList();
+    }
+
+    function saveMachinesList() {
+      localStorage.setItem('inj_machines', JSON.stringify(machinesList));
+      renderMachinesMasterList();
+      renderMachinesGrid();
+      populateHistoryFilterDropdowns();
+    }
+
+    // --- 4. RENDERIZADO PLANTA EN VIVO ---
+    function renderStats() {
+      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0 };
+
+      machinesList.forEach(m => {
+        const state = currentPlantState[m.id]?.estado || 'Parada Prioridad';
+        counts[state] = (counts[state] || 0) + 1;
+      });
+
+      document.getElementById('stat-produccion').innerText = counts.Operativa || 0;
+      document.getElementById('stat-montaje').innerText = counts["En Montaje"] || 0;
+      document.getElementById('stat-parada').innerText = counts["Parada Prioridad"] || 0;
+      document.getElementById('stat-color').innerText = counts["Cambio de Color"] || 0;
+      document.getElementById('stat-taller').innerText = counts["Mantenimiento / Taller"] || 0;
+
+      // Badges Filtros
+      document.getElementById('pcount-todas').innerText = machinesList.length;
+      document.getElementById('pcount-operativa').innerText = counts.Operativa || 0;
+      document.getElementById('pcount-montaje').innerText = counts["En Montaje"] || 0;
+      document.getElementById('pcount-parada').innerText = counts["Parada Prioridad"] || 0;
+      document.getElementById('pcount-color').innerText = counts["Cambio de Color"] || 0;
+      document.getElementById('pcount-taller').innerText = counts["Mantenimiento / Taller"] || 0;
+
+      document.getElementById('badge-total-machines').innerText = machinesList.length;
+      document.getElementById('badge-total-history').innerText = historyLogs.length;
+    }
+
+    function setPlantaFilter(filter) {
+      activePlantaFilter = filter;
+      document.querySelectorAll('.pfilter-tab').forEach(b => b.classList.remove('active-ptab', 'bg-brand-600', 'text-white'));
+      const activeBtn = document.getElementById(`pfilter-${filter}`);
+      if (activeBtn) activeBtn.classList.add('active-ptab', 'bg-brand-600', 'text-white');
+      renderMachinesGrid();
+    }
+
+    function renderMachinesGrid() {
+      const grid = document.getElementById('machines-grid');
+      const query = document.getElementById('planta-search').value.toLowerCase().trim();
+      grid.innerHTML = '';
+
+      const filtered = machinesList.filter(m => {
+        const rep = currentPlantState[m.id] || {};
+        const estado = rep.estado || 'Parada Prioridad';
+
+        if (activePlantaFilter !== 'todas' && estado !== activePlantaFilter) return false;
+
+        if (query) {
+          const matchName = m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query);
+          const matchRef = (rep.referencia || '').toLowerCase().includes(query);
+          const matchMolde = (rep.codMolde || '').toLowerCase().includes(query);
+          const matchArt = (rep.codArticulo || '').toLowerCase().includes(query);
+          return matchName || matchRef || matchMolde || matchArt;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white dark:bg-slate-800 rounded-2xl p-8 text-center border border-slate-200 dark:border-slate-700">
+            <i class="fa-solid fa-inbox text-4xl text-slate-300 dark:text-slate-600 mb-2"></i>
+            <p class="text-xs font-semibold text-slate-500">No hay máquinas registradas bajo este criterio.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const rep = currentPlantState[m.id] || {};
+        grid.insertAdjacentHTML('beforeend', buildMachineCardHTML(m, rep));
+      });
+    }
+
+    function buildMachineCardHTML(machine, rep) {
+      const estado = rep.estado || 'Parada Prioridad';
+      const timeBadge = getTimeAgoText(rep.datetime);
+
+      let badgeBg = 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200';
+      let dotColor = 'bg-slate-400';
+      let icon = 'fa-pause';
+
+      if (estado === 'Operativa') {
+        badgeBg = 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300';
+        dotColor = 'bg-emerald-500 animate-pulse';
+        icon = 'fa-play';
+      } else if (estado === 'En Montaje') {
+        badgeBg = 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300';
+        dotColor = 'bg-amber-500';
+        icon = 'fa-wrench';
+      } else if (estado === 'Parada Prioridad') {
+        badgeBg = 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300';
+        dotColor = 'bg-rose-500';
+        icon = 'fa-circle-stop';
+      } else if (estado === 'Cambio de Color') {
+        badgeBg = 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/80 dark:text-purple-300';
+        dotColor = 'bg-purple-500';
+        icon = 'fa-palette';
+      } else if (estado === 'Mantenimiento / Taller') {
+        badgeBg = 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-800 dark:text-slate-300';
+        dotColor = 'bg-slate-500';
+        icon = 'fa-gears';
+      }
+
+      return `
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden">
+          
+          <div class="p-3.5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full ${dotColor}"></span>
+              <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${machine.name}</h3>
+            </div>
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badgeBg} flex items-center space-x-1">
+              <i class="fa-solid ${icon} text-[9px]"></i>
+              <span>${estado}</span>
+            </span>
+          </div>
+
+          <div class="p-3.5 space-y-2.5 flex-1 text-xs">
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Referencia Activa</span>
+              <p class="font-semibold text-slate-800 dark:text-slate-100 text-xs line-clamp-2 mt-0.5">
+                ${rep.referencia || '<span class="text-slate-400 font-normal italic">Sin referencia registrada</span>'}
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-100 dark:border-slate-700/40">
+              <div>
+                <span class="text-[9px] text-slate-400 block font-medium">Molde:</span>
+                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">${rep.codMolde || '--'}</span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 block font-medium">Presión:</span>
+                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">${rep.presion || '--'}</span>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Novedad / Observación</span>
+              <p class="text-slate-600 dark:text-slate-300 text-xs line-clamp-2 mt-0.5 italic">
+                ${rep.observaciones ? `"${rep.observaciones}"` : '<span class="text-slate-400 not-italic">Sin observaciones</span>'}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10px] text-slate-400">
+              <span class="flex items-center space-x-1">
+                <i class="fa-regular fa-clock"></i>
+                <span>${timeBadge}</span>
+              </span>
+              <span class="font-medium text-slate-500 dark:text-slate-400 truncate max-w-[100px]">
+                ${rep.responsable ? rep.responsable.split(' ')[0] : 'Sin firma'}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-2.5 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+            <button onclick="openReportModal('${machine.id}')" class="w-full bg-slate-900 hover:bg-brand-600 dark:bg-slate-700 dark:hover:bg-brand-600 text-white font-semibold py-1.5 px-3 rounded-xl text-xs transition-colors shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Actualizar Reporte</span>
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function getTimeAgoText(datetimeStr) {
+      if (!datetimeStr) return 'Sin datos';
+      const diffMin = Math.floor((new Date() - new Date(datetimeStr)) / (1000 * 60));
+      if (diffMin < 60) return `Hace ${diffMin}m`;
+      const diffHours = Math.floor(diffMin / 60);
+      if (diffHours < 24) return `Hace ${diffHours}h`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `Hace ${diffDays}d`;
+    }
+
+    // --- 5. MODAL DE REGISTRO Y GUARDADO ---
+    function openReportModal(machineId) {
+      const machine = machinesList.find(m => m.id === machineId);
+      if (!machine) return;
+
+      const rep = currentPlantState[machineId] || {};
+
+      document.getElementById('modal-machine-id').innerText = machine.id;
+      document.getElementById('form-machine-id').value = machine.id;
+
+      document.getElementById('form-responsable').value = rep.responsable || staffList[0] || '';
+      document.getElementById('form-turno').value = rep.turno || "Turno 1 (06:00 - 14:00)";
+      document.getElementById('form-estado').value = rep.estado || "Operativa";
+      document.getElementById('form-presion').value = rep.presion || "";
+      document.getElementById('form-referencia').value = rep.referencia || "";
+      document.getElementById('form-cod-articulo').value = rep.codArticulo || "";
+      document.getElementById('form-cod-molde').value = rep.codMolde || "";
+      document.getElementById('form-observaciones').value = rep.observaciones || "";
+
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('form-datetime').value = now.toISOString().slice(0, 16);
+
+      document.getElementById('modal-report').classList.remove('hidden');
+    }
+
+    function closeReportModal() {
+      document.getElementById('modal-report').classList.add('hidden');
+    }
+
+    function handleReportSubmit(e) {
+      e.preventDefault();
+
+      const machineId = document.getElementById('form-machine-id').value;
+      const newReport = {
+        id: 'rep-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        machineId: machineId,
+        responsable: document.getElementById('form-responsable').value,
+        turno: document.getElementById('form-turno').value,
+        estado: document.getElementById('form-estado').value,
+        presion: document.getElementById('form-presion').value,
+        referencia: document.getElementById('form-referencia').value,
+        codArticulo: document.getElementById('form-cod-articulo').value,
+        codMolde: document.getElementById('form-cod-molde').value,
+        observaciones: document.getElementById('form-observaciones').value,
+        datetime: new Date(document.getElementById('form-datetime').value).toISOString()
+      };
+
+      // 1. Guardar en el estado actual de la máquina (Planta viva)
+      currentPlantState[machineId] = newReport;
+      savePlantState();
+
+      // 2. Insertar al principio del Historial Persistente
+      historyLogs.unshift(newReport);
+      saveHistoryLogs();
+
+      // Refrescar
+      renderStats();
+      renderMachinesGrid();
+      if (!document.getElementById('tab-content-historial').classList.contains('hidden')) {
+        renderHistorySection();
+      }
+
+      closeReportModal();
+      showToast(`Reporte guardado en historial para Máquina ${machineId}`);
+    }
+
+    function finalizeAndSaveTurn() {
+      // Guarda una captura estática de todas las máquinas actuales en el historial masivo
+      const timestamp = new Date().toISOString();
+      let savedCount = 0;
+
+      machinesList.forEach(m => {
+        const current = currentPlantState[m.id];
+        if (current) {
+          const turnSnapshot = {
+            ...current,
+            id: 'turn-snap-' + Date.now() + '-' + m.id,
+            datetime: timestamp,
+            observaciones: (current.observaciones || '') + ' [Cierre Turno Consolidado]'
+          };
+          historyLogs.unshift(turnSnapshot);
+          savedCount++;
+        }
+      });
+
+      saveHistoryLogs();
+      showToast(`Se ha guardado el cierre completo del turno (${savedCount} tarjetas respaldadas).`);
+    }
+
+    // --- 6. SECCIÓN DE HISTORIAL DE REPORTES ---
+    function populateHistoryFilterDropdowns() {
+      const mSelect = document.getElementById('hist-filter-machine');
+      mSelect.innerHTML = '<option value="todas">Todas las Máquinas</option>' +
+        machinesList.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+
+      const sSelect = document.getElementById('hist-filter-staff');
+      sSelect.innerHTML = '<option value="todos">Todos los Responsables</option>' +
+        staffList.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function renderHistorySection() {
+      const tbody = document.getElementById('history-table-body');
+      const fromDate = document.getElementById('hist-filter-from').value;
+      const toDate = document.getElementById('hist-filter-to').value;
+      const machineFilter = document.getElementById('hist-filter-machine').value;
+      const staffFilter = document.getElementById('hist-filter-staff').value;
+      const searchFilter = document.getElementById('hist-filter-search').value.toLowerCase().trim();
+
+      const filtered = historyLogs.filter(log => {
+        // Filtro Fecha Desde
+        if (fromDate) {
+          const logDate = log.datetime.slice(0, 10);
+          if (logDate < fromDate) return false;
+        }
+        // Filtro Fecha Hasta
+        if (toDate) {
+          const logDate = log.datetime.slice(0, 10);
+          if (logDate > toDate) return false;
+        }
+        // Filtro Máquina
+        if (machineFilter !== 'todas' && log.machineId !== machineFilter) return false;
+        // Filtro Responsable
+        if (staffFilter !== 'todos' && log.responsable !== staffFilter) return false;
+        // Búsqueda Texto
+        if (searchFilter) {
+          const matchRef = (log.referencia || '').toLowerCase().includes(searchFilter);
+          const matchMolde = (log.codMolde || '').toLowerCase().includes(searchFilter);
+          const matchArt = (log.codArticulo || '').toLowerCase().includes(searchFilter);
+          const matchObs = (log.observaciones || '').toLowerCase().includes(searchFilter);
+          return matchRef || matchMolde || matchArt || matchObs;
+        }
+        return true;
+      });
+
+      document.getElementById('hist-showing-count').innerText = filtered.length;
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">No se encontraron reportes históricos con los filtros aplicados.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(log => {
+        const dt = new Date(log.datetime);
+        const dateFormatted = dt.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+        let stateBadge = 'bg-slate-100 text-slate-700';
+        if (log.estado === 'Operativa') stateBadge = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+        if (log.estado === 'En Montaje') stateBadge = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+        if (log.estado === 'Parada Prioridad') stateBadge = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors text-xs border-b border-slate-100 dark:border-slate-700/50';
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-slate-500 whitespace-nowrap">${dateFormatted}</td>
+          <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${log.machineId}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${stateBadge}">${log.estado || 'Parada'}</span>
+          </td>
+          <td class="p-3 font-semibold text-slate-800 dark:text-slate-200">${log.referencia || '--'}</td>
+          <td class="p-3 text-slate-600 dark:text-slate-400">${log.codMolde || '--'} / ${log.codArticulo || '--'}</td>
+          <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.presion || '--'}</td>
+          <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.responsable || '--'}</td>
+          <td class="p-3 text-slate-500 max-w-xs truncate italic" title="${log.observaciones || ''}">${log.observaciones || 'Sin datos'}</td>
+          <td class="p-3 text-right space-x-1 whitespace-nowrap">
+            <button onclick="restoreReportToCard('${log.id}')" title="Cargar este estado en la tarjeta de máquina" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+            </button>
+            <button onclick="copySingleReportToWA('${log.id}')" title="Copiar para WhatsApp" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg">
+              <i class="fa-brands fa-whatsapp"></i>
+            </button>
+            <button onclick="deleteSingleHistoryLog('${log.id}')" title="Eliminar Registro" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function resetHistoryFilters() {
+      document.getElementById('hist-filter-from').value = '';
+      document.getElementById('hist-filter-to').value = '';
+      document.getElementById('hist-filter-machine').value = 'todas';
+      document.getElementById('hist-filter-staff').value = 'todos';
+      document.getElementById('hist-filter-search').value = '';
+      renderHistorySection();
+    }
+
+    function restoreReportToCard(logId) {
+      const log = historyLogs.find(r => r.id === logId);
+      if (!log) return;
+
+      currentPlantState[log.machineId] = { ...log };
+      savePlantState();
+      renderStats();
+      renderMachinesGrid();
+      showToast(`Se cargaron los datos históricos en la tarjeta de la Máquina ${log.machineId}`);
+    }
+
+    function deleteSingleHistoryLog(logId) {
+      if (confirm('¿Desea eliminar permanentemente este registro del historial?')) {
+        historyLogs = historyLogs.filter(r => r.id !== logId);
+        saveHistoryLogs();
+        renderHistorySection();
+        showToast('Registro eliminado del historial.');
+      }
+    }
+
+    function clearAllHistory() {
+      if (confirm('⚠️ ¿ESTÁ SEGURO? Se borrará todo el historial acumulado de reportes. Esta acción no se puede deshacer.')) {
+        historyLogs = [];
+        saveHistoryLogs();
+        renderHistorySection();
+      }
+    }
+
+    // --- 7. EXPORTACIÓN OFICIAL DE EXCEL (FORMATO FR-PRO-12 / VERSIÓN 1 / FECHA: JULIO 26 DE 2025) ---
+    function exportHistoryExcel() {
+      if (typeof XLSX === 'undefined') {
+        showToast('Cargando motor de Excel...', 'error');
+        return;
+      }
+
+      // Estructurar filas con formato oficial solicitado
+      const data = [
+        ["INFORME DE TURNO DE PLANTA DE INYECCIÓN DE PLÁSTICOS"],
+        ["CODIGO: FR-PRO-12", "VERSIÓN: 1", "FECHA: Julio 26 de 2025"],
+        [], // Renglón de separación
+        ["ID Registro", "Fecha y Hora", "Turno", "Máquina", "Estado", "Código Molde", "Código Artículo", "Referencia Producto", "Presión Cierre", "Responsable / Operador", "Observaciones y Novedades"]
+      ];
+
+      historyLogs.forEach(log => {
+        data.push([
+          log.id || '',
+          new Date(log.datetime).toLocaleString('es-ES'),
+          log.turno || '',
+          log.machineId || '',
+          log.estado || '',
+          log.codMolde || '',
+          log.codArticulo || '',
+          log.referencia || '',
+          log.presion || '',
+          log.responsable || '',
+          log.observaciones || ''
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "FR-PRO-12");
+
+      // Ajustes de anchos de columna para visualización profesional
+      ws['!cols'] = [
+        { wch: 15 }, { wch: 20 }, { wch: 22 }, { wch: 12 }, { wch: 18 },
+        { wch: 14 }, { wch: 14 }, { wch: 38 }, { wch: 15 }, { wch: 32 }, { wch: 45 }
+      ];
+
+      XLSX.writeFile(wb, `INFORME_DE_TURNO_FR-PRO-12_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast('Excel generado con código FR-PRO-12 y encabezado oficial.');
+    }
+
+    function exportHistoryCSV() {
+      // CSV en UTF-8 con BOM para asegurar compatibilidad completa con tildes y caracteres especiales en Excel
+      let csvContent = "\uFEFF";
+      csvContent += "CODIGO: FR-PRO-12,VERSIÓN: 1,FECHA: Julio 26 de 2025\n\n";
+      csvContent += "ID,FechaHora,Turno,Maquina,Estado,Molde,Articulo,Referencia,Presion,Responsable,Observaciones\n";
+      
+      historyLogs.forEach(log => {
+        const row = [
+          log.id,
+          `"${new Date(log.datetime).toLocaleString('es-ES')}"`,
+          `"${log.turno || ''}"`,
+          `"${log.machineId || ''}"`,
+          `"${log.estado || ''}"`,
+          `"${log.codMolde || ''}"`,
+          `"${log.codArticulo || ''}"`,
+          `"${(log.referencia || '').replace(/"/g, '""')}"`,
+          `"${log.presion || ''}"`,
+          `"${log.responsable || ''}"`,
+          `"${(log.observaciones || '').replace(/"/g, '""')}"`
+        ].join(",");
+        csvContent += row + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `INFORME_DE_TURNO_FR-PRO-12_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- 8. MÓDULO BACKUP JSON ---
+    function exportJSONBackup() {
+      const backupData = {
+        app: "InjectionPro",
+        version: "3.0",
+        exportDate: new Date().toISOString(),
+        staff: staffList,
+        machines: machinesList,
+        plantState: currentPlantState,
+        historyLogs: historyLogs
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `Backup_Sistema_Inyeccion_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      showToast('Copia de seguridad JSON descargada.');
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.staff && imported.machines && imported.historyLogs) {
+            staffList = imported.staff;
+            machinesList = imported.machines;
+            currentPlantState = imported.plantState || {};
+            historyLogs = imported.historyLogs;
+
+            saveStaffList();
+            saveMachinesList();
+            savePlantState();
+            saveHistoryLogs();
+
+            renderStats();
+            renderMachinesGrid();
+            showToast('¡Base de datos restaurada con éxito!');
+          } else {
+            showToast('El archivo JSON no tiene el formato válido.', 'error');
+          }
+        } catch (err) {
+          showToast('Error al procesar el archivo JSON.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // --- 9. MAESTROS & CONFIGURACIÓN DE OPERADORES Y MÁQUINAS ---
+    function populateFormDropdowns() {
+      const select = document.getElementById('form-responsable');
+      select.innerHTML = staffList.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function renderStaffList() {
+      const container = document.getElementById('staff-list-container');
+      container.innerHTML = staffList.map((s, idx) => `
+        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700/60 text-xs">
+          <span class="font-semibold text-slate-700 dark:text-slate-200">${s}</span>
+          <button onclick="removeStaff(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function removeStaff(idx) {
+      if (staffList.length <= 1) {
+        showToast('Debe existir al menos un operador registrado.', 'error');
+        return;
+      }
+      staffList.splice(idx, 1);
+      saveStaffList();
+    }
+
+    function openAddStaffModal() { document.getElementById('modal-add-staff').classList.remove('hidden'); }
+    function closeAddStaffModal() { document.getElementById('modal-add-staff').classList.add('hidden'); }
+    function handleAddStaff() {
+      const val = document.getElementById('new-staff-name').value.trim();
+      if (val && !staffList.includes(val)) {
+        staffList.push(val);
+        saveStaffList();
+        closeAddStaffModal();
+        document.getElementById('new-staff-name').value = '';
+        showToast('Operador registrado.');
+      }
+    }
+
+    function renderMachinesMasterList() {
+      const container = document.getElementById('machines-list-container');
+      container.innerHTML = machinesList.map((m, idx) => `
+        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700/60 text-xs">
+          <span class="font-bold text-slate-800 dark:text-slate-100">${m.name} (ID: ${m.id})</span>
+          <button onclick="removeMachine(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function removeMachine(idx) {
+      if (machinesList.length <= 1) {
+        showToast('Debe existir al menos una máquina en la lista.', 'error');
+        return;
+      }
+      machinesList.splice(idx, 1);
+      saveMachinesList();
+    }
+
+    function openAddMachineModal() { document.getElementById('modal-add-machine').classList.remove('hidden'); }
+    function closeAddMachineModal() { document.getElementById('modal-add-machine').classList.add('hidden'); }
+    function handleAddMachine() {
+      const name = document.getElementById('new-machine-name').value.trim();
+      if (name) {
+        const id = name.replace(/\s+/g, '-');
+        if (!machinesList.some(m => m.id === id)) {
+          machinesList.push({ id: id, name: name });
+          saveMachinesList();
+          closeAddMachineModal();
+          document.getElementById('new-machine-name').value = '';
+          showToast(`Máquina ${name} añadida.`);
+        } else {
+          showToast('Ya existe una máquina con este nombre.', 'error');
+        }
+      }
+    }
+
+    // --- 10. WHATSAPP GENERATION & SINGLE LOG COPY ---
+    function openWhatsAppModal() {
+      generateWhatsAppText();
+      document.getElementById('modal-whatsapp').classList.remove('hidden');
+    }
+
+    function closeWhatsAppModal() { document.getElementById('modal-whatsapp').classList.add('hidden'); }
+
+    function generateWhatsAppText() {
+      const filter = document.getElementById('wa-filter-status').value;
+      const dateStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      let text = `📋 *REPORTE DE TURNO DE PLANTA - INYECCIÓN*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
+
+      machinesList.forEach(m => {
+        const r = currentPlantState[m.id];
+        const estado = r?.estado || 'Parada Prioridad';
+        if (filter !== 'todas') {
+          if (filter === 'Paradas' && (estado !== 'Parada Prioridad' && estado !== 'Mantenimiento / Taller')) return;
+          if (filter !== 'Paradas' && estado !== filter) return;
+        }
+
+        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : '🔴';
+        text += `${emoji} *MÁQUINA ${m.id}* [${estado}]\n`;
+        if (r?.referencia) text += `   • *Ref:* ${r.referencia}\n`;
+        if (r?.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
+        if (r?.observaciones) text += `   • *Obs:* ${r.observaciones}\n`;
+        if (r?.responsable) text += `   • *Resp:* ${r.responsable}\n`;
+        text += `\n`;
+      });
+
+      text += `-----------------------------------\n📌 *Sistema Pro:* Formato Oficial FR-PRO-12`;
+      document.getElementById('wa-preview-text').value = text;
+    }
+
+    function copyWhatsAppToClipboard() {
+      const text = document.getElementById('wa-preview-text').value;
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('Texto de WhatsApp copiado al portapapeles.');
+    }
+
+    function copySingleReportToWA(logId) {
+      const log = historyLogs.find(r => r.id === logId);
+      if (!log) return;
+
+      const text = `📌 *REPORTE INDIVIDUAL - MÁQUINA ${log.machineId}*\n` +
+        `• *Estado:* ${log.estado}\n` +
+        `• *Referencia:* ${log.referencia}\n` +
+        `• *Molde:* ${log.codMolde || 'N/A'}\n` +
+        `• *Presión:* ${log.presion || 'N/A'}\n` +
+        `• *Responsable:* ${log.responsable}\n` +
+        `• *Obs:* ${log.observaciones || 'Sin datos'}\n` +
+        `• *Fecha:* ${new Date(log.datetime).toLocaleString('es-ES')}`;
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('Reporte individual copiado.');
+    }
+
+    function sendWhatsAppDirect() {
+      const text = document.getElementById('wa-preview-text').value;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // --- GUÍA ACCESO WEB ---
+    function openWebAccessModal() { document.getElementById('modal-web-access').classList.remove('hidden'); }
+    function closeWebAccessModal() { document.getElementById('modal-web-access').classList.add('hidden'); }
+
+    // --- 11. CONTROLES NAVEGACIÓN DE PESTAÑAS Y UTILIDADES ---
+    function switchTab(tab) {
+      document.getElementById('tab-content-planta').classList.add('hidden');
+      document.getElementById('tab-content-historial').classList.add('hidden');
+      document.getElementById('tab-content-maestros').classList.add('hidden');
+
+      document.getElementById('nav-planta').classList.remove('nav-tab-active');
+      document.getElementById('nav-historial').classList.remove('nav-tab-active');
+      document.getElementById('nav-maestros').classList.remove('nav-tab-active');
+
+      document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).classList.add('nav-tab-active');
+
+      if (tab === 'historial') {
+        renderHistorySection();
+      }
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('inj_dark_mode', isDark);
+    }
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bg = type === 'error' ? 'bg-rose-600' : 'bg-slate-900 dark:bg-slate-100 dark:text-slate-900';
+      toast.className = `${bg} text-white font-medium text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-brand-400"></i><span>${msg}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Inicializar la aplicación en carga de ventana
+    window.onload = initApp;
+  </script>
+</body>
+</html>
