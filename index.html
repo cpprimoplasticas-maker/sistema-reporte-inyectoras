@@ -1367,7 +1367,7 @@
           <td class="p-3 font-bold whitespace-nowrap">${escapeQuick(m.name)}</td>
           <td class="p-2"><select class="quick-field rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="estado" onchange="markQuickDirty(this)">${states.map(x=>`<option ${((r.estado||'Parada Prioridad')===x)?'selected':''}>${x}</option>`).join('')}</select></td>
           <td class="p-2"><input class="quick-field w-28 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="presion" value="${escapeQuick(r.presion||'')}" placeholder="Ton / PSI" oninput="markQuickDirty(this)"></td>
-          <td class="p-2"><input class="quick-field w-32 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="codArticulo" value="${escapeQuick(r.codArticulo||'')}" list="articles-list-options" placeholder="Código" oninput="quickLookupArticle(this);markQuickDirty(this)"></td>
+          <td class="p-2"><input class="quick-field w-32 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="codArticulo" value="${escapeQuick(r.codArticulo||'')}" list="articles-list-options" placeholder="Código" oninput="quickLookupArticle(this);markQuickDirty(this)" onchange="quickLookupArticle(this)" onblur="quickLookupArticle(this)"></td>
           <td class="p-2"><input class="quick-field w-56 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="referencia" value="${escapeQuick(r.referencia||'')}" placeholder="Referencia" oninput="markQuickDirty(this)"></td>
           <td class="p-2"><input class="quick-field w-32 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="codMolde" value="${escapeQuick(r.codMolde||'')}" placeholder="Molde" oninput="markQuickDirty(this)"></td>
           <td class="p-2"><textarea class="quick-field w-72 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" rows="2" data-field="observaciones" placeholder="Novedades del turno" oninput="markQuickDirty(this)">${escapeQuick(r.observaciones||'')}</textarea></td>
@@ -1378,7 +1378,25 @@
     function escapeQuick(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function markQuickDirty(el) { const row=el.closest('tr'); const cb=row.querySelector('.quick-dirty'); cb.checked=true; row.classList.add('bg-amber-50','dark:bg-amber-950/20'); updateQuickDirtyCount(); }
     function updateQuickDirtyCount() { const rows=[...document.querySelectorAll('#quick-report-body tr')]; const n=rows.filter(r=>r.querySelector('.quick-dirty').checked).length; const el=document.getElementById('quick-dirty-count'); if(el) el.textContent=`${n} fila${n===1?'':'s'} marcada${n===1?'':'s'} para guardar`; }
-    function quickLookupArticle(input) { const code=input.value.trim().toLowerCase(); const found=articlesMaster.find(a=>(a.codArticulo||'').toLowerCase()===code); if(found){ const row=input.closest('tr'); row.querySelector('[data-field="referencia"]').value=found.referencia||''; row.querySelector('[data-field="codMolde"]').value=found.codMolde||''; } }
+    function normalizeArticleCode(value) {
+      return String(value ?? '').replace(/\u00a0/g, ' ').trim().replace(/\s+/g, '').toLocaleLowerCase('es');
+    }
+    function quickLookupArticle(input) {
+      const code = normalizeArticleCode(input.value);
+      const row = input.closest('tr');
+      if (!row || !code) return;
+      const found = articlesMaster.find(a => normalizeArticleCode(a.codArticulo) === code);
+      if (found) {
+        const ref = row.querySelector('[data-field="referencia"]');
+        const mold = row.querySelector('[data-field="codMolde"]');
+        if (ref) ref.value = String(found.referencia ?? '');
+        if (mold) mold.value = String(found.codMolde ?? '');
+        const cb = row.querySelector('.quick-dirty');
+        if (cb) cb.checked = true;
+        row.classList.add('bg-amber-50','dark:bg-amber-950/20');
+        updateQuickDirtyCount();
+      }
+    }
     function saveQuickShift() {
       const rows=[...document.querySelectorAll('#quick-report-body tr')].filter(r=>r.querySelector('.quick-dirty').checked);
       if (!rows.length) { showToast('No hay filas modificadas para guardar.', 'error'); return; }
