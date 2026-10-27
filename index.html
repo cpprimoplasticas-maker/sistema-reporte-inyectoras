@@ -50,6 +50,26 @@
   </style>
 </head>
 <body class="h-full text-slate-800 dark:text-slate-100 dark:bg-slate-900 flex flex-col min-h-screen transition-colors duration-200">
+  <!-- PANTALLA DE INICIO DE SESIÓN: bloquea el uso hasta autenticar con Firebase -->
+  <div id="app-login-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-4">
+    <div class="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600 text-2xl"><i class="fa-solid fa-industry"></i></div>
+      <h2 class="text-center text-2xl font-black tracking-wide">INJECTION <span class="text-sky-400">PRO</span></h2>
+      <p class="mt-2 text-center text-sm text-slate-300">Inicia sesión para acceder a los reportes de planta</p>
+      <form class="mt-6 space-y-4" onsubmit="loginToApp(event)">
+        <label class="block text-sm font-semibold">Correo electrónico
+          <input id="login-email" type="email" required autocomplete="username" class="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-sky-400" placeholder="trabajador@empresa.com">
+        </label>
+        <label class="block text-sm font-semibold">Contraseña
+          <input id="login-password" type="password" required autocomplete="current-password" class="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-sky-400" placeholder="Tu contraseña de acceso">
+        </label>
+        <p id="login-error" role="alert" class="hidden rounded-lg bg-rose-950 p-3 text-sm text-rose-200"></p>
+        <button id="login-submit" type="submit" class="w-full rounded-xl bg-sky-600 px-4 py-3 font-bold text-white transition hover:bg-sky-500"><i class="fa-solid fa-right-to-bracket mr-2"></i>Iniciar sesión</button>
+      </form>
+      <p class="mt-4 text-center text-xs text-slate-400">Solicita tu cuenta al administrador de INJECTION PRO. No hay registro público.</p>
+    </div>
+  </div>
+
 
   <!-- HEADER NAVEGACIÓN PRINCIPAL -->
   <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-40">
@@ -91,6 +111,8 @@
             <i class="fa-solid fa-floppy-disk"></i>
             <span>Guardar Turno Completo</span>
           </button>
+
+          <button id="app-logout-button" onclick="logoutFromApp()" class="hidden inline-flex items-center space-x-2 bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-2 rounded-xl" title="Cerrar sesión"><i class="fa-solid fa-right-from-bracket"></i><span class="hidden lg:inline">Salir</span></button>
         </div>
 
       </div>
@@ -2025,7 +2047,45 @@
         });
         cloudStatus('conectado · datos compartidos activos');
         showToast('Sincronización en la nube activada.');
-      } catch(e) { cloudApplyingRemote=false; cloudReady=false; cloudStatus(e.message || 'no fue posible conectar',true); }
+        return true;
+      } catch(e) {
+        cloudApplyingRemote=false; cloudReady=false;
+        cloudStatus(e.message || 'no fue posible conectar',true);
+        const loginError=document.getElementById('login-error');
+        if(loginError){loginError.textContent=humanizeFirebaseLoginError(e);loginError.classList.remove('hidden');}
+        return false;
+      }
+    }
+    function humanizeFirebaseLoginError(error){
+      const code=error && error.code ? error.code : '';
+      if(code==='auth/invalid-credential' || code==='auth/wrong-password' || code==='auth/user-not-found') return 'Correo o contraseña incorrectos. Verifica tus datos o consulta al administrador.';
+      if(code==='auth/too-many-requests') return 'Se realizaron demasiados intentos. Espera un momento e inténtalo de nuevo.';
+      if(code==='auth/network-request-failed') return 'No se pudo conectar. Revisa tu conexión a Internet e inténtalo de nuevo.';
+      if(code==='permission-denied' || (error && /Missing or insufficient permissions/i.test(error.message||''))) return 'La cuenta inició sesión, pero Firestore rechazó el acceso. Revisa las reglas de seguridad.';
+      return (error && error.message) ? error.message : 'No se pudo iniciar sesión. Inténtalo de nuevo.';
+    }
+    async function loginToApp(event){
+      if(event) event.preventDefault();
+      const button=document.getElementById('login-submit');
+      const errorBox=document.getElementById('login-error');
+      if(errorBox){errorBox.textContent='';errorBox.classList.add('hidden');}
+      if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i>Conectando…';}
+      document.getElementById('cloud-email').value=document.getElementById('login-email').value.trim();
+      document.getElementById('cloud-password').value=document.getElementById('login-password').value;
+      const ok=await connectCloudSync();
+      if(ok && cloudReady){
+        document.getElementById('app-login-gate').classList.add('hidden');
+        const logoutButton=document.getElementById('app-logout-button'); if(logoutButton) logoutButton.classList.remove('hidden');
+        document.getElementById('login-password').value='';
+      }
+      if(button){button.disabled=false;button.innerHTML='<i class="fa-solid fa-right-to-bracket mr-2"></i>Iniciar sesión';}
+    }
+    function logoutFromApp(){
+      disconnectCloudSync();
+      const gate=document.getElementById('app-login-gate'); if(gate) gate.classList.remove('hidden');
+      const logoutButton=document.getElementById('app-logout-button'); if(logoutButton) logoutButton.classList.add('hidden');
+      const password=document.getElementById('login-password'); if(password) password.value='';
+      const errorBox=document.getElementById('login-error'); if(errorBox){errorBox.textContent='';errorBox.classList.add('hidden');}
     }
     function disconnectCloudSync(){
       cloudUnsubscribers.forEach(fn=>fn()); cloudUnsubscribers=[]; cloudReady=false;
