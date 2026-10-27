@@ -47,6 +47,127 @@
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
     .nav-tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: 700; }
     .dark .nav-tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
+
+
+    /* Corrección de ancho completo en móviles: evita el espacio vacío a la derecha */
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    @media (max-width: 640px) {
+      body, body > *, header, main, footer, section, article, .max-w-7xl {
+        max-width: 100% !important;
+      }
+      .max-w-7xl {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      main, header > div {
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+      main * {
+        min-width: 0;
+      }
+      /* Excepciones para tablas anchas: desplazan su propio contenido, no toda la página */
+      .overflow-x-auto {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+      }
+      #tab-content-rapido .overflow-x-auto table {
+        min-width: 1000px !important;
+        max-width: none !important;
+      }
+      table {
+        max-width: none;
+      }
+      /* Los paneles, formularios y tarjetas no deben imponer un ancho fijo */
+      [class*="grid-cols-"],
+      .grid,
+      .flex {
+        min-width: 0;
+      }
+      input, select, textarea {
+        width: 100%;
+        min-width: 0 !important;
+      }
+      pre, code, p, h1, h2, h3, label, span {
+        overflow-wrap: anywhere;
+      }
+    }
+
+    /* --- AJUSTES RESPONSIVOS PARA CELULARES --- */
+    *, *::before, *::after { box-sizing: border-box; }
+    img, table { max-width: 100%; }
+    input, select, textarea, button { max-width: 100%; }
+    @media (max-width: 640px) {
+      body { font-size: 14px; }
+      header { position: sticky; top: 0; }
+      header > div { padding-left: 12px !important; padding-right: 12px !important; }
+      header > div > div:first-child {
+        height: auto !important;
+        min-height: 58px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        align-items: flex-start !important;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      header h1 { font-size: 15px !important; letter-spacing: .02em !important; }
+      header p { font-size: 10px !important; }
+      header .fa-industry { font-size: 16px !important; }
+      header .flex.items-center.space-x-2 { gap: 6px; }
+      header .flex.items-center.space-x-2 > span { font-size: 9px !important; }
+      header nav {
+        display: flex;
+        gap: 18px !important;
+        overflow-x: auto;
+        white-space: nowrap;
+        margin-top: 0 !important;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+      }
+      header nav button { flex: 0 0 auto; padding-top: 11px !important; padding-bottom: 11px !important; font-size: 12px !important; }
+      main { padding: 12px !important; }
+      main .p-5 { padding: 12px !important; }
+      main .p-6 { padding: 14px !important; }
+      main .rounded-2xl { border-radius: 14px !important; }
+      main h2 { font-size: 16px !important; line-height: 1.3; }
+      main .text-3xl { font-size: 1.5rem !important; }
+      main .text-2xl { font-size: 1.25rem !important; }
+      main .text-xl { font-size: 1.1rem !important; }
+      main .text-lg { font-size: 1rem !important; }
+      main .grid { min-width: 0; }
+      #machines-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+      #tab-content-planta .grid.grid-cols-2 { gap: 8px !important; }
+      #tab-content-planta .grid.grid-cols-2 > * { min-width: 0; }
+      main button, main a { overflow-wrap: anywhere; }
+      main button { min-height: 38px; }
+      main input, main select, main textarea { min-height: 40px; font-size: 14px !important; }
+      /* Los filtros se desplazan horizontalmente sin comprimir sus botones. */
+      .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+      #tab-content-rapido .overflow-x-auto table { min-width: 1150px !important; }
+      /* Tablas largas conservan sus columnas y se desplazan lateralmente. */
+      table { font-size: 11px; }
+      th, td { padding: 8px !important; }
+      /* Panel de sincronización y formularios en una sola columna. */
+      #tab-content-gestion .grid,
+      #tab-content-gestion [class*="grid-cols-"],
+      #tab-content-gestion .md\\:grid-cols-2,
+      #tab-content-gestion .lg\\:grid-cols-2 {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      #app-login-gate { padding: 12px !important; }
+      #app-login-gate > div { padding: 20px !important; }
+      #app-login-gate h2 { font-size: 22px !important; }
+    }
+    @media (min-width: 641px) and (max-width: 900px) {
+      main { padding-left: 18px !important; padding-right: 18px !important; }
+      #machines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      header nav { gap: 16px !important; overflow-x: auto; }
+    }
   </style>
 </head>
 <body class="h-full text-slate-800 dark:text-slate-100 dark:bg-slate-900 flex flex-col min-h-screen transition-colors duration-200">
