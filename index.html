@@ -103,6 +103,10 @@
           <span id="badge-total-machines" class="ml-1 px-2 py-0.5 text-xs bg-slate-800 rounded-full text-slate-300">0</span>
         </button>
 
+        <button onclick="switchTab('rapido')" id="nav-rapido" class="py-3 px-1 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
+          <i class="fa-solid fa-table-list"></i><span>Reporte Rápido por Turno</span>
+        </button>
+
         <button onclick="switchTab('historial')" id="nav-historial" class="py-3 px-1 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span>Historial de Reportes</span>
@@ -214,6 +218,23 @@
         <!-- Renderizado dinámico -->
       </div>
 
+    </div>
+
+    <!-- REPORTE RÁPIDO: TODAS LAS MÁQUINAS EN UNA TABLA -->
+    <div id="tab-content-rapido" class="space-y-5 hidden">
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h2 class="text-lg font-black mb-1">Reporte rápido de turno</h2>
+        <p class="text-xs text-slate-500 mb-4">Ingresa los datos generales una sola vez. Solo se guardarán las filas que modifiques; las demás máquinas conservarán su último reporte.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="text-xs font-semibold">Responsable / coordinador<select id="quick-responsable" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
+          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 14:00)</option><option>Turno 2 (14:00 - 22:00)</option><option>Turno 3 (22:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Fecha del reporte<input id="quick-fecha" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900" /></label>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 dark:border-slate-700"><div><h3 class="font-bold">Máquinas de planta</h3><p id="quick-dirty-count" class="text-xs text-slate-500">0 filas modificadas</p></div><button onclick="saveQuickShift()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl"><i class="fa-solid fa-floppy-disk mr-2"></i>Guardar filas modificadas</button></div>
+        <div class="overflow-x-auto"><table class="min-w-[1450px] w-full text-xs"><thead class="bg-slate-100 dark:bg-slate-900 text-left"><tr><th class="p-3">Actualizar</th><th class="p-3">Máquina</th><th class="p-3">Estado</th><th class="p-3">Presión cierre</th><th class="p-3">Código artículo</th><th class="p-3">Referencia</th><th class="p-3">Código molde</th><th class="p-3">Observaciones</th><th class="p-3">Último reporte</th></tr></thead><tbody id="quick-report-body"></tbody></table></div>
+      </div>
     </div>
 
     <!-- ========================================== -->
@@ -419,6 +440,18 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- Sincronización en la nube -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center"><i class="fa-solid fa-cloud-arrow-up"></i></div><div><h3 class="font-bold">Sincronización entre computadores</h3><p class="text-xs text-slate-500">Conecta INJECTION PRO a una base de datos compartida en Firebase.</p></div></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="text-xs font-semibold">Configuración Firebase (JSON)<textarea id="cloud-firebase-config" rows="5" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-3 text-xs font-mono" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea></label>
+          <div class="space-y-3"><label class="block text-xs font-semibold">Correo del usuario autorizado<input id="cloud-email" type="email" autocomplete="username" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-2.5" placeholder="operador@empresa.com"></label><label class="block text-xs font-semibold">Contraseña Firebase<input id="cloud-password" type="password" autocomplete="current-password" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-2.5" placeholder="Contraseña de acceso"></label>
+          <div class="flex flex-wrap gap-2"><button onclick="connectCloudSync()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-link mr-1"></i>Conectar / sincronizar</button><button onclick="disconnectCloudSync()" class="bg-slate-200 dark:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold">Desconectar</button></div></div>
+        </div>
+        <p id="cloud-sync-status" class="text-xs font-semibold text-slate-500">Estado: sin conectar. Los datos siguen guardándose localmente.</p>
+        <p class="text-xs text-slate-500">Requiere crear un proyecto Firebase, habilitar Authentication por correo/contraseña y Cloud Firestore. No compartas la contraseña entre empleados; crea un usuario por persona.</p>
       </div>
 
       <!-- Módulo Backup Local JSON -->
@@ -749,6 +782,11 @@
   <!-- TOAST CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
+  <!-- Firebase para sincronización en nube -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
   <!-- SCRIPT LÓGICA PRINCIPAL -->
   <script>
     // --- 1. CATÁLOGOS INICIALES BASADOS EN EL DATALOGGER DE PLANTA Y LA TABLA ENVIADA ---
@@ -908,6 +946,7 @@
       populateFormDropdowns();
       renderStats();
       renderMachinesGrid();
+      renderQuickReportTable();
       renderStaffList();
       renderMachinesMasterList();
       renderArticlesMasterTable();
@@ -1283,6 +1322,61 @@
       if (diffHours < 24) return `Hace ${diffHours}h`;
       const diffDays = Math.floor(diffHours / 24);
       return `Hace ${diffDays}d`;
+    }
+
+    // --- REPORTE RÁPIDO POR FILAS: guarda solo máquinas editadas ---
+    function renderQuickReportTable() {
+      const staff = document.getElementById('quick-responsable');
+      if (!staff) return;
+      const prior = staff.value;
+      staff.innerHTML = staffList.map(x => `<option value="${escapeQuick(x)}">${escapeQuick(x)}</option>`).join('');
+      if (prior && staffList.includes(prior)) staff.value = prior;
+      else if (staffList.length) staff.value = staffList[0];
+      const dateEl = document.getElementById('quick-fecha');
+      if (dateEl && !dateEl.value) { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); dateEl.value = d.toISOString().slice(0,10); }
+      const body = document.getElementById('quick-report-body');
+      if (!body) return;
+      const states = ['Operativa','En Montaje','Parada Prioridad','Cambio de Color','Mantenimiento / Taller'];
+      body.innerHTML = machinesList.map(m => {
+        const r = currentPlantState[m.id] || {};
+        const last = r.datetime ? new Date(r.datetime).toLocaleString('es-CO') : 'Sin reporte';
+        return `<tr class="border-t border-slate-100 dark:border-slate-700" data-machine="${escapeQuick(m.id)}">
+          <td class="p-3 text-center"><input type="checkbox" class="quick-dirty" aria-label="Actualizar ${escapeQuick(m.name)}" onchange="updateQuickDirtyCount()"></td>
+          <td class="p-3 font-bold whitespace-nowrap">${escapeQuick(m.name)}</td>
+          <td class="p-2"><select class="quick-field rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="estado" onchange="markQuickDirty(this)">${states.map(x=>`<option ${((r.estado||'Parada Prioridad')===x)?'selected':''}>${x}</option>`).join('')}</select></td>
+          <td class="p-2"><input class="quick-field w-28 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="presion" value="${escapeQuick(r.presion||'')}" placeholder="Ton / PSI" oninput="markQuickDirty(this)"></td>
+          <td class="p-2"><input class="quick-field w-32 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="codArticulo" value="${escapeQuick(r.codArticulo||'')}" list="articles-list-options" placeholder="Código" oninput="quickLookupArticle(this);markQuickDirty(this)"></td>
+          <td class="p-2"><input class="quick-field w-56 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="referencia" value="${escapeQuick(r.referencia||'')}" placeholder="Referencia" oninput="markQuickDirty(this)"></td>
+          <td class="p-2"><input class="quick-field w-32 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" data-field="codMolde" value="${escapeQuick(r.codMolde||'')}" placeholder="Molde" oninput="markQuickDirty(this)"></td>
+          <td class="p-2"><textarea class="quick-field w-72 rounded border p-2 bg-white dark:bg-slate-900 dark:border-slate-600" rows="2" data-field="observaciones" placeholder="Novedades del turno" oninput="markQuickDirty(this)">${escapeQuick(r.observaciones||'')}</textarea></td>
+          <td class="p-3 text-slate-500 whitespace-nowrap">${escapeQuick(last)}</td></tr>`;
+      }).join('');
+      populateArticlesDatalist(); updateQuickDirtyCount();
+    }
+    function escapeQuick(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function markQuickDirty(el) { const row=el.closest('tr'); const cb=row.querySelector('.quick-dirty'); cb.checked=true; row.classList.add('bg-amber-50','dark:bg-amber-950/20'); updateQuickDirtyCount(); }
+    function updateQuickDirtyCount() { const rows=[...document.querySelectorAll('#quick-report-body tr')]; const n=rows.filter(r=>r.querySelector('.quick-dirty').checked).length; const el=document.getElementById('quick-dirty-count'); if(el) el.textContent=`${n} fila${n===1?'':'s'} marcada${n===1?'':'s'} para guardar`; }
+    function quickLookupArticle(input) { const code=input.value.trim().toLowerCase(); const found=articlesMaster.find(a=>(a.codArticulo||'').toLowerCase()===code); if(found){ const row=input.closest('tr'); row.querySelector('[data-field="referencia"]').value=found.referencia||''; row.querySelector('[data-field="codMolde"]').value=found.codMolde||''; } }
+    function saveQuickShift() {
+      const rows=[...document.querySelectorAll('#quick-report-body tr')].filter(r=>r.querySelector('.quick-dirty').checked);
+      if (!rows.length) { showToast('No hay filas modificadas para guardar.', 'error'); return; }
+      const responsable=document.getElementById('quick-responsable').value;
+      const turno=document.getElementById('quick-turno').value;
+      const fecha=document.getElementById('quick-fecha').value;
+      if(!responsable || !fecha){showToast('Selecciona responsable y fecha del reporte.','error');return;}
+      const datetimeBase=new Date(`${fecha}T12:00:00`);
+      let saved=0;
+      rows.forEach(row=>{
+        const machineId=row.dataset.machine;
+        const vals={}; row.querySelectorAll('.quick-field').forEach(el=>vals[el.dataset.field]=el.value.trim());
+        const old=currentPlantState[machineId]||{};
+        if(vals.codArticulo && vals.referencia){const idx=articlesMaster.findIndex(a=>(a.codArticulo||'').toLowerCase()===vals.codArticulo.toLowerCase()); if(idx<0) articlesMaster.push({codArticulo:vals.codArticulo,referencia:vals.referencia,codMolde:vals.codMolde}); else {articlesMaster[idx].referencia=vals.referencia;articlesMaster[idx].codMolde=vals.codMolde;}}
+        const report={...old,...vals,id:'rep-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),machineId,responsable,turno,datetime:datetimeBase.toISOString(),fechaReporte:fecha};
+        currentPlantState[machineId]=report; historyLogs.unshift({...report}); saved++;
+      });
+      savePlantState(); saveHistoryLogs(); saveArticlesMaster(); renderStats(); renderMachinesGrid(); renderQuickReportTable();
+      if(!document.getElementById('tab-content-historial').classList.contains('hidden')) renderHistorySection();
+      showToast(`Guardadas ${saved} máquinas. Las filas sin marcar conservaron su último reporte.`);
     }
 
     // --- 6. MODAL DE REGISTRO Y GUARDADO ---
@@ -1811,16 +1905,19 @@
     // --- 12. CONTROLES NAVEGACIÓN DE PESTAÑAS Y UTILIDADES ---
     function switchTab(tab) {
       document.getElementById('tab-content-planta').classList.add('hidden');
+      document.getElementById('tab-content-rapido').classList.add('hidden');
       document.getElementById('tab-content-historial').classList.add('hidden');
       document.getElementById('tab-content-maestros').classList.add('hidden');
 
       document.getElementById('nav-planta').classList.remove('nav-tab-active');
+      document.getElementById('nav-rapido').classList.remove('nav-tab-active');
       document.getElementById('nav-historial').classList.remove('nav-tab-active');
       document.getElementById('nav-maestros').classList.remove('nav-tab-active');
 
       document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
       document.getElementById(`nav-${tab}`).classList.add('nav-tab-active');
 
+      if (tab === 'rapido') { renderQuickReportTable(); }
       if (tab === 'historial') {
         renderHistorySection();
       }
@@ -1846,8 +1943,102 @@
       }, 3500);
     }
 
+    // Configuración pública de la aplicación web Firebase INJECTION PRO.
+    // La seguridad real depende de Authentication y de las reglas de Firestore.
+    const DEFAULT_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDnbMHsEFXfiV5mXPKzJNPIouRbup6-KtM",
+      authDomain: "injection-pro-ok.firebaseapp.com",
+      projectId: "injection-pro-ok",
+      storageBucket: "injection-pro-ok.firebasestorage.app",
+      messagingSenderId: "9353351064",
+      appId: "1:9353351064:web:5ef1ec508d17ff8bc565ed",
+      measurementId: "G-QL38CBN8R3"
+    };
+
+    // --- SINCRONIZACIÓN EN LA NUBE (Firebase Auth + Firestore) ---
+    const CLOUD_DATA_KEYS = ['inj_staff','inj_machines','inj_articles_master','inj_current_plant','inj_history_logs'];
+    let cloudDb = null, cloudAuth = null, cloudUnsubscribers = [], cloudApplyingRemote = false, cloudReady = false, cloudReloadTimer = null;
+    function cloudStatus(message, error=false) {
+      const el=document.getElementById('cloud-sync-status');
+      if(el){el.textContent='Estado: '+message; el.className='text-xs font-semibold '+(error?'text-rose-600':'text-emerald-600');}
+    }
+    function cloudSetItem(key, value) {
+      if(cloudApplyingRemote || !cloudReady || !CLOUD_DATA_KEYS.includes(key)) return;
+      cloudDb.collection('injectionProData').doc(key).set({value: value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()})
+        .then(()=>cloudStatus('conectado · cambios sincronizados'))
+        .catch(e=>cloudStatus('error al sincronizar: '+e.message,true));
+    }
+    function applyCloudValue(key, raw){
+      try {
+        const value=JSON.parse(raw);
+        if(key==='inj_staff') staffList=value;
+        else if(key==='inj_machines') machinesList=value;
+        else if(key==='inj_articles_master') articlesMaster=value;
+        else if(key==='inj_current_plant') currentPlantState=value;
+        else if(key==='inj_history_logs') historyLogs=value;
+      } catch(e){ console.error('Dato remoto inválido',key,e); }
+    }
+    function renderAfterCloudUpdate(){
+      populateFormDropdowns(); renderStats(); renderMachinesGrid(); renderQuickReportTable();
+      renderStaffList(); renderMachinesMasterList(); renderArticlesMasterTable(); populateHistoryFilterDropdowns();
+      const badge=document.getElementById('badge-total-history'); if(badge) badge.innerText=historyLogs.length;
+      const hist=document.getElementById('tab-content-historial'); if(hist && !hist.classList.contains('hidden')) renderHistorySection();
+      cloudStatus('conectado · datos compartidos activos');
+    }
+    async function connectCloudSync(){
+      try {
+        const configText=document.getElementById('cloud-firebase-config').value.trim() || localStorage.getItem('inj_firebase_config') || '';
+        const email=document.getElementById('cloud-email').value.trim();
+        const password=document.getElementById('cloud-password').value;
+        if(!configText) throw new Error('Pega primero la configuración JSON de Firebase.');
+        if(!email || !password) throw new Error('Ingresa el correo y contraseña de un usuario Firebase autorizado.');
+        const config=JSON.parse(configText);
+        localStorage.setItem('inj_firebase_config',configText);
+        if(!firebase.apps.length) firebase.initializeApp(config);
+        cloudAuth=firebase.auth(); cloudDb=firebase.firestore();
+        cloudStatus('conectando…');
+        await cloudAuth.signInWithEmailAndPassword(email,password);
+        cloudUnsubscribers.forEach(fn=>fn()); cloudUnsubscribers=[];
+        const collection=cloudDb.collection('injectionProData');
+        const snapshot=await collection.get();
+        if(snapshot.empty){
+          // Solo inicializa la nube si todavía no existe una base compartida.
+          const batch=cloudDb.batch();
+          CLOUD_DATA_KEYS.forEach(key=>{const raw=localStorage.getItem(key); if(raw!==null) batch.set(collection.doc(key),{value:raw,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});});
+          await batch.commit();
+        } else {
+          cloudApplyingRemote=true;
+          snapshot.forEach(doc=>{if(CLOUD_DATA_KEYS.includes(doc.id) && typeof doc.data().value==='string') { localStorage.setItem(doc.id,doc.data().value); applyCloudValue(doc.id,doc.data().value); }});
+          cloudApplyingRemote=false;
+          renderAfterCloudUpdate();
+        }
+        cloudReady=true;
+        CLOUD_DATA_KEYS.forEach(key=>{
+          const unsub=collection.doc(key).onSnapshot(doc=>{
+            if(!doc.exists || typeof doc.data().value!=='string') return;
+            const incoming=doc.data().value;
+            if(localStorage.getItem(key)===incoming) return;
+            cloudApplyingRemote=true; localStorage.setItem(key,incoming); applyCloudValue(key,incoming); cloudApplyingRemote=false;
+            renderAfterCloudUpdate();
+          },e=>cloudStatus('error leyendo '+key+': '+e.message,true));
+          cloudUnsubscribers.push(unsub);
+        });
+        cloudStatus('conectado · datos compartidos activos');
+        showToast('Sincronización en la nube activada.');
+      } catch(e) { cloudApplyingRemote=false; cloudReady=false; cloudStatus(e.message || 'no fue posible conectar',true); }
+    }
+    function disconnectCloudSync(){
+      cloudUnsubscribers.forEach(fn=>fn()); cloudUnsubscribers=[]; cloudReady=false;
+      if(cloudAuth) cloudAuth.signOut().catch(()=>{});
+      cloudDb=null; cloudStatus('desconectado · los datos quedan en este navegador');
+    }
+    function restoreCloudConfigField(){const saved=localStorage.getItem('inj_firebase_config');const field=document.getElementById('cloud-firebase-config');if(field&&!field.value)field.value=saved || JSON.stringify(DEFAULT_FIREBASE_CONFIG,null,2);}
+    // Intercepta guardados existentes para que todos los módulos de la app sincronicen.
+    const originalLocalStorageSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){originalLocalStorageSetItem.call(this,key,value); if(this===localStorage) cloudSetItem(String(key),String(value));};
+
     // Inicializar la aplicación en carga de ventana
-    window.onload = initApp;
+    window.onload = function(){ initApp(); restoreCloudConfigField(); };
   </script>
 </body>
 </html>
