@@ -47,9 +47,10 @@
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
     .nav-tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: 700; }
     .dark .nav-tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
-    #quick-report-bottom-scroll-track { scrollbar-width: auto; }
-    #quick-report-bottom-scroll-track::-webkit-scrollbar { height: 10px; }
-    #quick-report-bottom-scroll-track::-webkit-scrollbar-thumb { background: #64748b; border-radius: 8px; }
+    #quick-report-bottom-scroll-track { scrollbar-width: auto; scrollbar-color: #475569 #cbd5e1; }
+    #quick-report-bottom-scroll-track::-webkit-scrollbar { height: 16px; }
+    #quick-report-bottom-scroll-track::-webkit-scrollbar-track { background: #cbd5e1; border-radius: 8px; }
+    #quick-report-bottom-scroll-track::-webkit-scrollbar-thumb { background: #475569; border: 3px solid #cbd5e1; border-radius: 8px; }
     @media (max-width: 640px) {
       #quick-report-bottom-scroll { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
       #quick-report-bottom-scroll-track { min-width: 70px; }
@@ -265,15 +266,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 dark:border-slate-700"><div><h3 class="font-bold">Máquinas de planta</h3><p id="quick-dirty-count" class="text-xs text-slate-500">0 filas modificadas</p></div><button onclick="saveQuickShift()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl"><i class="fa-solid fa-floppy-disk mr-2"></i>Guardar filas modificadas</button></div>
         <div id="quick-report-scroll" class="overflow-x-auto"><table class="min-w-[1450px] w-full text-xs"><thead class="bg-slate-100 dark:bg-slate-900 text-left"><tr><th class="p-3">Actualizar</th><th class="p-3">Máquina</th><th class="p-3">Estado</th><th class="p-3">Presión cierre</th><th class="p-3">Código artículo</th><th class="p-3">Referencia</th><th class="p-3">Código molde</th><th class="p-3">Observaciones</th><th class="p-3">Último reporte</th></tr></thead><tbody id="quick-report-body"></tbody></table></div>
       </div>
-      <!-- Barra inferior fija para desplazar la tabla del Reporte Rápido -->
-      <div id="quick-report-bottom-scroll" class="hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 border-t border-slate-300 dark:border-slate-700 px-3 py-2 shadow-lg">
-        <div class="flex items-center gap-3 max-w-full">
-          <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap"><i class="fa-solid fa-arrows-left-right mr-1"></i>Desliza para ver columnas</span>
-          <div id="quick-report-bottom-scroll-track" class="flex-1 overflow-x-auto overflow-y-hidden h-5 rounded-full bg-slate-200 dark:bg-slate-700" style="overscroll-behavior-x:contain;">
-            <div id="quick-report-bottom-scroll-spacer" class="h-1"></div>
-          </div>
-        </div>
-      </div>
+
     </div>
 
     <!-- ========================================== -->
@@ -1960,20 +1953,25 @@
     function closeWebAccessModal() { document.getElementById('modal-web-access').classList.add('hidden'); }
 
     // --- 12. CONTROLES NAVEGACIÓN DE PESTAÑAS Y UTILIDADES ---
-    // Sincroniza la barra inferior fija con el desplazamiento horizontal de la tabla.
+    // Sincroniza una barra inferior visible con la tabla horizontal del Reporte Rápido.
     function initQuickReportBottomScroll() {
       const tableScroll = document.getElementById('quick-report-scroll');
       const bottomBar = document.getElementById('quick-report-bottom-scroll');
       const bottomTrack = document.getElementById('quick-report-bottom-scroll-track');
       const spacer = document.getElementById('quick-report-bottom-scroll-spacer');
-      if (!tableScroll || !bottomBar || !bottomTrack || !spacer) return;
+      const reportTab = document.getElementById('tab-content-rapido');
+      if (!tableScroll || !bottomBar || !bottomTrack || !spacer || !reportTab) return;
 
       const refresh = () => {
-        const needsScroll = tableScroll.scrollWidth > tableScroll.clientWidth + 2;
-        spacer.style.width = tableScroll.scrollWidth + 'px';
-        bottomBar.classList.toggle('hidden', !needsScroll || document.getElementById('tab-content-rapido').classList.contains('hidden'));
-        bottomTrack.scrollLeft = tableScroll.scrollLeft;
+        const active = !reportTab.classList.contains('hidden');
+        const needsScroll = tableScroll.scrollWidth > tableScroll.clientWidth + 3;
+        spacer.style.width = Math.max(tableScroll.scrollWidth, bottomTrack.clientWidth + 1) + 'px';
+        bottomBar.classList.toggle('hidden', !(active && needsScroll));
+        if (Math.abs(bottomTrack.scrollLeft - tableScroll.scrollLeft) > 1) {
+          bottomTrack.scrollLeft = tableScroll.scrollLeft;
+        }
       };
+
       if (!tableScroll.dataset.bottomScrollBound) {
         let syncing = false;
         tableScroll.addEventListener('scroll', () => {
@@ -1988,10 +1986,17 @@
           tableScroll.scrollLeft = bottomTrack.scrollLeft;
           syncing = false;
         }, { passive: true });
+        window.addEventListener('resize', refresh);
+        if ('ResizeObserver' in window) {
+          const observer = new ResizeObserver(refresh);
+          observer.observe(tableScroll);
+          observer.observe(tableScroll.querySelector('table') || tableScroll);
+        }
         tableScroll.dataset.bottomScrollBound = '1';
       }
       refresh();
-      window.requestAnimationFrame(refresh);
+      requestAnimationFrame(refresh);
+      setTimeout(refresh, 250);
     }
 
     function switchTab(tab) {
@@ -2012,7 +2017,7 @@
       if (tab === 'historial') {
         renderHistorySection();
       }
-      if (tab === 'rapido') setTimeout(initQuickReportBottomScroll, 50);
+      if (tab === 'rapido') { setTimeout(initQuickReportBottomScroll, 80); setTimeout(initQuickReportBottomScroll, 350); }
     }
 
     function toggleDarkMode() {
@@ -2169,6 +2174,20 @@
 
     // Inicializar la aplicación en carga de ventana
     window.onload = function(){ initApp(); restoreCloudConfigField(); };
+
+
+  <!-- Barra fija global: desplazamiento horizontal del Reporte Rápido -->
+  <div id="quick-report-bottom-scroll" class="hidden fixed bottom-0 left-0 right-0 z-[90] bg-white dark:bg-slate-900 border-t-2 border-sky-500 px-3 py-2 shadow-2xl">
+    <div class="mx-auto flex max-w-7xl items-center gap-3">
+      <span class="whitespace-nowrap text-xs font-bold text-slate-700 dark:text-slate-200">
+        <i class="fa-solid fa-arrows-left-right mr-1 text-sky-600"></i>Desplazar tabla
+      </span>
+      <div id="quick-report-bottom-scroll-track" class="flex-1 overflow-x-scroll overflow-y-hidden rounded-lg bg-slate-200 dark:bg-slate-700" style="height:30px; scrollbar-width: auto; overscroll-behavior-x: contain;">
+        <div id="quick-report-bottom-scroll-spacer" style="height:12px;"></div>
+      </div>
+      <span class="whitespace-nowrap text-[11px] text-slate-500 dark:text-slate-400">← →</span>
+    </div>
+  </div>
   </script>
 </body>
 </html>
