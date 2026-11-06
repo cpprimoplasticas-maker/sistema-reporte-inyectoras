@@ -1939,15 +1939,12 @@
       const turnoSeleccionado = document.getElementById('wa-turno').value;
       const dateStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-      let text = `🕒 *TURNO:* ${turnoSeleccionado}\n📋 *REPORTE DE TURNO DE PLANTA - INYECCIÓN*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
+      let text = `🕒 *TURNO DE REFERENCIA:* ${turnoSeleccionado}\n📋 *REPORTE DE PLANTA - ÚLTIMAS NOVEDADES*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
 
-      // El reporte es independiente de los filtros de la vista de planta.
-      // Solo incluye la última novedad registrada por máquina cuando corresponde al turno seleccionado.
-      // Las máquinas sin novedad en ese turno se omiten, sin mostrar mensajes de "sin reporte".
-      const maquinasParaWhatsApp = machinesList.filter(m => {
-        const ultimoRegistro = currentPlantState[m.id];
-        return !!ultimoRegistro && ultimoRegistro.turno === turnoSeleccionado;
-      });
+      // El reporte ignora los filtros de planta y el turno de cada registro.
+      // Incluye la última novedad disponible de cada máquina, sea cual sea el turno en que se registró.
+      // Solo se omiten máquinas que nunca han tenido un registro.
+      const maquinasParaWhatsApp = machinesList.filter(m => !!currentPlantState[m.id]);
 
       maquinasParaWhatsApp.forEach(m => {
         const r = currentPlantState[m.id];
@@ -1960,6 +1957,7 @@
           : estado === 'Termino producción' ? '🔵' : '🔴';
 
         text += `${emoji} *MÁQUINA ${m.id}* [${estado}]\n`;
+        if (r.turno) text += `   • *Turno de la novedad:* ${r.turno}\n`;
         if (r.referencia) text += `   • *Ref:* ${r.referencia}\n`;
         if (r.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
         if (r.observaciones) text += `   • *Obs:* ${r.observaciones}\n`;
@@ -1967,7 +1965,7 @@
         text += `\n`;
       });
 
-      text += `*Total de máquinas con novedad: ${maquinasParaWhatsApp.length}*\n`;
+      text += `*Total de máquinas con última novedad registrada: ${maquinasParaWhatsApp.length}*\n`;
       text += `-----------------------------------\n📌 *Sistema Pro:* Formato Oficial FR-PRO-12`;
       const preview = document.getElementById('wa-preview-text');
       if (preview) preview.value = text;
