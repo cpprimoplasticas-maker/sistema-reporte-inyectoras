@@ -234,6 +234,9 @@
           <button onclick="setPlantaFilter('Mantenimiento / Taller')" id="pfilter-Mantenimiento / Taller" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             ⚪ Mantenimiento (<span id="pcount-taller">0</span>)
           </button>
+          <button onclick="setPlantaFilter('Termino producción')" id="pfilter-Termino producción" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            🔵 Termino producción (<span id="pcount-termino-produccion">0</span>)
+          </button>
         </div>
 
         <div class="relative w-full md:w-80">
@@ -579,6 +582,7 @@
               <option value="Parada Prioridad" class="text-rose-600 font-bold">🔴 Parada por Prioridad / Falta Componentes</option>
               <option value="Cambio de Color" class="text-purple-600 font-bold">🟣 Cambio de Color / Limpieza</option>
               <option value="Mantenimiento / Taller" class="text-slate-600 font-bold">⚪ En Mantenimiento / Taller Molde</option>
+              <option value="Termino producción" class="text-cyan-700 font-bold">🔵 Termino producción</option>
             </select>
           </div>
 
@@ -674,6 +678,7 @@
             <option value="Operativa">Solo Operativas</option>
             <option value="En Montaje">Solo En Montaje</option>
             <option value="Paradas">Solo Paradas / Taller</option>
+            <option value="Termino producción">Solo Termino producción</option>
           </select>
         </div>
 
@@ -1191,7 +1196,7 @@
 
     // --- 5. RENDERIZADO PLANTA EN VIVO ---
     function renderStats() {
-      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0 };
+      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0, "Termino producción": 0 };
 
       machinesList.forEach(m => {
         const state = currentPlantState[m.id]?.estado || 'Parada Prioridad';
@@ -1211,6 +1216,7 @@
       document.getElementById('pcount-parada').innerText = counts["Parada Prioridad"] || 0;
       document.getElementById('pcount-color').innerText = counts["Cambio de Color"] || 0;
       document.getElementById('pcount-taller').innerText = counts["Mantenimiento / Taller"] || 0;
+      document.getElementById('pcount-termino-produccion').innerText = counts["Termino producción"] || 0;
 
       document.getElementById('badge-total-machines').innerText = machinesList.length;
       document.getElementById('badge-total-history').innerText = historyLogs.length;
@@ -1289,6 +1295,10 @@
         badgeBg = 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-800 dark:text-slate-300';
         dotColor = 'bg-slate-500';
         icon = 'fa-gears';
+      } else if (estado === 'Termino producción') {
+        badgeBg = 'bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-950/80 dark:text-cyan-300';
+        dotColor = 'bg-cyan-500';
+        icon = 'fa-flag-checkered';
       }
 
       return `
@@ -1375,7 +1385,7 @@
       if (dateEl && !dateEl.value) { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); dateEl.value = d.toISOString().slice(0,10); }
       const body = document.getElementById('quick-report-body');
       if (!body) return;
-      const states = ['Operativa','En Montaje','Parada Prioridad','Cambio de Color','Mantenimiento / Taller'];
+      const states = ['Operativa','En Montaje','Parada Prioridad','Cambio de Color','Mantenimiento / Taller','Termino producción'];
       body.innerHTML = machinesList.map(m => {
         const r = currentPlantState[m.id] || {};
         const last = r.datetime ? new Date(r.datetime).toLocaleString('es-CO') : 'Sin reporte';
@@ -1604,6 +1614,7 @@
         if (log.estado === 'Operativa') stateBadge = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
         if (log.estado === 'En Montaje') stateBadge = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
         if (log.estado === 'Parada Prioridad') stateBadge = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
+        if (log.estado === 'Termino producción') stateBadge = 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300';
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors text-xs border-b border-slate-100 dark:border-slate-700/50';
@@ -1904,7 +1915,7 @@
           if (filter !== 'Paradas' && estado !== filter) return;
         }
 
-        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : '🔴';
+        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : estado === 'Termino producción' ? '🔵' : '🔴';
         text += `${emoji} *MÁQUINA ${m.id}* [${estado}]\n`;
         if (r?.referencia) text += `   • *Ref:* ${r.referencia}\n`;
         if (r?.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
