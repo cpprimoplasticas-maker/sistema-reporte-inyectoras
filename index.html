@@ -120,6 +120,7 @@
             <span>Guardar Turno Completo</span>
           </button>
 
+          <span id="current-role-label" class="hidden sm:inline text-xs font-semibold text-slate-300"></span>
           <button id="app-logout-button" onclick="logoutFromApp()" class="hidden inline-flex items-center space-x-2 bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-2 rounded-xl" title="Cerrar sesión"><i class="fa-solid fa-right-from-bracket"></i><span class="hidden lg:inline">Salir</span></button>
         </div>
 
@@ -238,7 +239,7 @@
           <button onclick="setPlantaFilter('Parada Prioridad')" id="pfilter-Parada Prioridad" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             🔴 Paradas (<span id="pcount-parada">0</span>)
           </button>
-          <button onclick="setPlantaFilter('Parada por disponibilidad de recurso')" id="pfilter-Parada por disponibilidad de recurso" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button onclick="setPlantaFilter('PARADA POR DISPONIBILIDAD DE RECURSO')" id="pfilter-PARADA POR DISPONIBILIDAD DE RECURSO" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             🟠 Parada por Recursos (<span id="pcount-recursos">0</span>)
           </button>
           <button onclick="setPlantaFilter('Cambio de Color')" id="pfilter-Cambio de Color" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -593,7 +594,7 @@
               <option value="Operativa" class="text-emerald-600 font-bold">🟢 Operativa / En Producción</option>
               <option value="En Montaje" class="text-amber-600 font-bold">🟠 En Montaje / Ajuste</option>
               <option value="Parada Prioridad" class="text-rose-600 font-bold">🔴 Parada por Prioridad / Falta Componentes</option>
-              <option value="Parada por disponibilidad de recurso" class="text-orange-600 font-bold">🟠 Parada por disponibilidad de recurso</option>
+              <option value="PARADA POR DISPONIBILIDAD DE RECURSO" class="text-orange-600 font-bold">🟠 PARADA POR DISPONIBILIDAD DE RECURSO</option>
               <option value="Cambio de Color" class="text-purple-600 font-bold">🟣 Cambio de Color / Limpieza</option>
               <option value="Mantenimiento / Taller" class="text-slate-600 font-bold">⚪ En Mantenimiento / Taller Molde</option>
               <option value="Termino producción" class="text-cyan-700 font-bold">🔵 Termino producción</option>
@@ -691,7 +692,7 @@
             <option value="todas">Todas las máquinas</option>
             <option value="Operativa">Solo Operativas</option>
             <option value="En Montaje">Solo En Montaje</option>
-            <option value="Parada por disponibilidad de recurso">Solo Parada por Recursos</option>
+            <option value="PARADA POR DISPONIBILIDAD DE RECURSO">Solo Parada por Recursos</option>
             <option value="Paradas">Solo Paradas / Taller</option>
             <option value="Termino producción">Solo Termino producción</option>
           </select>
@@ -1211,7 +1212,7 @@
 
     // --- 5. RENDERIZADO PLANTA EN VIVO ---
     function renderStats() {
-      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Parada por disponibilidad de recurso": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0, "Termino producción": 0 };
+      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "PARADA POR DISPONIBILIDAD DE RECURSO": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0, "Termino producción": 0 };
 
       machinesList.forEach(m => {
         const state = currentPlantState[m.id]?.estado || 'Parada Prioridad';
@@ -1221,7 +1222,7 @@
       document.getElementById('stat-produccion').innerText = counts.Operativa || 0;
       document.getElementById('stat-montaje').innerText = counts["En Montaje"] || 0;
       document.getElementById('stat-parada').innerText = counts["Parada Prioridad"] || 0;
-      document.getElementById('stat-recursos').innerText = counts["Parada por disponibilidad de recurso"] || 0;
+      document.getElementById('stat-recursos').innerText = counts["PARADA POR DISPONIBILIDAD DE RECURSO"] || 0;
       document.getElementById('stat-color').innerText = counts["Cambio de Color"] || 0;
       document.getElementById('stat-taller').innerText = counts["Mantenimiento / Taller"] || 0;
 
@@ -1230,7 +1231,7 @@
       document.getElementById('pcount-operativa').innerText = counts.Operativa || 0;
       document.getElementById('pcount-montaje').innerText = counts["En Montaje"] || 0;
       document.getElementById('pcount-parada').innerText = counts["Parada Prioridad"] || 0;
-      document.getElementById('pcount-recursos').innerText = counts["Parada por disponibilidad de recurso"] || 0;
+      document.getElementById('pcount-recursos').innerText = counts["PARADA POR DISPONIBILIDAD DE RECURSO"] || 0;
       document.getElementById('pcount-color').innerText = counts["Cambio de Color"] || 0;
       document.getElementById('pcount-taller').innerText = counts["Mantenimiento / Taller"] || 0;
       document.getElementById('pcount-termino-produccion').innerText = counts["Termino producción"] || 0;
@@ -1304,7 +1305,7 @@
         badgeBg = 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300';
         dotColor = 'bg-rose-500';
         icon = 'fa-circle-stop';
-      } else if (estado === 'Parada por disponibilidad de recurso') {
+      } else if (estado === 'PARADA POR DISPONIBILIDAD DE RECURSO') {
         badgeBg = 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/80 dark:text-orange-300';
         dotColor = 'bg-orange-500';
         icon = 'fa-box-open';
@@ -1406,7 +1407,7 @@
       if (dateEl && !dateEl.value) { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); dateEl.value = d.toISOString().slice(0,10); }
       const body = document.getElementById('quick-report-body');
       if (!body) return;
-      const states = ['Operativa','En Montaje','Parada Prioridad','Parada por disponibilidad de recurso','Cambio de Color','Mantenimiento / Taller','Termino producción'];
+      const states = ['Operativa','En Montaje','Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Cambio de Color','Mantenimiento / Taller','Termino producción'];
       body.innerHTML = machinesList.map(m => {
         const r = currentPlantState[m.id] || {};
         const last = r.datetime ? new Date(r.datetime).toLocaleString('es-CO') : 'Sin reporte';
@@ -1635,7 +1636,7 @@
         if (log.estado === 'Operativa') stateBadge = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
         if (log.estado === 'En Montaje') stateBadge = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
         if (log.estado === 'Parada Prioridad') stateBadge = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
-        if (log.estado === 'Parada por disponibilidad de recurso') stateBadge = 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300';
+        if (log.estado === 'PARADA POR DISPONIBILIDAD DE RECURSO') stateBadge = 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300';
         if (log.estado === 'Termino producción') stateBadge = 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300';
 
         const tr = document.createElement('tr');
@@ -1933,11 +1934,11 @@
         const r = currentPlantState[m.id];
         const estado = r?.estado || 'Parada Prioridad';
         if (filter !== 'todas') {
-          if (filter === 'Paradas' && !['Parada Prioridad','Parada por disponibilidad de recurso','Mantenimiento / Taller'].includes(estado)) return;
+          if (filter === 'Paradas' && !['Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Mantenimiento / Taller'].includes(estado)) return;
           if (filter !== 'Paradas' && estado !== filter) return;
         }
 
-        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'Parada por disponibilidad de recurso' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : estado === 'Termino producción' ? '🔵' : '🔴';
+        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'PARADA POR DISPONIBILIDAD DE RECURSO' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : estado === 'Termino producción' ? '🔵' : '🔴';
         text += `${emoji} *MÁQUINA ${m.id}* [${estado}]\n`;
         if (r?.referencia) text += `   • *Ref:* ${r.referencia}\n`;
         if (r?.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
@@ -2074,6 +2075,7 @@
     }
 
     function switchTab(tab) {
+      if(!isAdminUser() && (tab === 'rapido' || tab === 'maestros')) tab = 'planta';
       document.getElementById('tab-content-planta').classList.add('hidden');
       document.getElementById('tab-content-rapido').classList.add('hidden');
       document.getElementById('tab-content-historial').classList.add('hidden');
@@ -2126,6 +2128,36 @@
       measurementId: "G-QL38CBN8R3"
     };
 
+    // --- PERFILES DE ACCESO INJECTION PRO ---
+    const ADMIN_UID = 'M5FjFuyf2aVXSAvFGXpNrca8Uvj1';
+    let currentUserRole = 'viewer';
+    function isAdminUser(){ return currentUserRole === 'admin'; }
+    function applyRolePermissions(){
+      const viewer = !isAdminUser();
+      document.body.classList.toggle('viewer-mode', viewer);
+      const roleLabel = document.getElementById('current-role-label');
+      if(roleLabel) roleLabel.textContent = viewer ? 'Modo visualización' : 'Administrador';
+      if(viewer && !document.getElementById('tab-content-planta').classList.contains('hidden')) return;
+      if(viewer) switchTab('planta');
+    }
+
+    const viewerPermissionStyles = document.createElement('style');
+    viewerPermissionStyles.textContent = `
+      body.viewer-mode #nav-rapido,
+      body.viewer-mode #nav-maestros,
+      body.viewer-mode #tab-content-rapido,
+      body.viewer-mode #tab-content-maestros,
+      body.viewer-mode button[onclick*="finalizeAndSaveTurn"],
+      body.viewer-mode button[onclick*="openReportModal"],
+      body.viewer-mode button[onclick*="restoreReportToCard"],
+      body.viewer-mode button[onclick*="deleteSingleHistoryLog"],
+      body.viewer-mode button[onclick*="clearAllHistory"],
+      body.viewer-mode button[onclick*="removeArticleMaster"],
+      body.viewer-mode button[onclick*="removeStaff"],
+      body.viewer-mode button[onclick*="removeMachine"] { display:none !important; }
+    `;
+    document.head.appendChild(viewerPermissionStyles);
+
     // --- SINCRONIZACIÓN EN LA NUBE (Firebase Auth + Firestore) ---
     const CLOUD_DATA_KEYS = ['inj_staff','inj_machines','inj_articles_master','inj_current_plant','inj_history_logs'];
     let cloudDb = null, cloudAuth = null, cloudUnsubscribers = [], cloudApplyingRemote = false, cloudReady = false, cloudReloadTimer = null;
@@ -2134,6 +2166,7 @@
       if(el){el.textContent='Estado: '+message; el.className='text-xs font-semibold '+(error?'text-rose-600':'text-emerald-600');}
     }
     function cloudSetItem(key, value) {
+      if(!isAdminUser()) return;
       if(cloudApplyingRemote || !cloudReady || !CLOUD_DATA_KEYS.includes(key)) return;
       cloudDb.collection('injectionProData').doc(key).set({value: value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()})
         .then(()=>cloudStatus('conectado · cambios sincronizados'))
@@ -2169,11 +2202,14 @@
         cloudAuth=firebase.auth(); cloudDb=firebase.firestore();
         cloudStatus('conectando…');
         await cloudAuth.signInWithEmailAndPassword(email,password);
+        currentUserRole = cloudAuth.currentUser && cloudAuth.currentUser.uid === ADMIN_UID ? 'admin' : 'viewer';
+        applyRolePermissions();
         cloudUnsubscribers.forEach(fn=>fn()); cloudUnsubscribers=[];
         const collection=cloudDb.collection('injectionProData');
         const snapshot=await collection.get();
         if(snapshot.empty){
-          // Solo inicializa la nube si todavía no existe una base compartida.
+          if(!isAdminUser()) throw new Error('La base compartida aún no tiene datos. Ingresa primero con la cuenta administradora para inicializarla.');
+          // Solo el administrador puede inicializar la nube.
           const batch=cloudDb.batch();
           CLOUD_DATA_KEYS.forEach(key=>{const raw=localStorage.getItem(key); if(raw!==null) batch.set(collection.doc(key),{value:raw,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});});
           await batch.commit();
@@ -2230,6 +2266,9 @@
       if(button){button.disabled=false;button.innerHTML='<i class="fa-solid fa-right-to-bracket mr-2"></i>Iniciar sesión';}
     }
     function logoutFromApp(){
+      currentUserRole='viewer';
+      document.body.classList.remove('viewer-mode');
+      const roleLabel=document.getElementById('current-role-label'); if(roleLabel) roleLabel.textContent='';
       disconnectCloudSync();
       const gate=document.getElementById('app-login-gate'); if(gate) gate.classList.remove('hidden');
       const logoutButton=document.getElementById('app-logout-button'); if(logoutButton) logoutButton.classList.add('hidden');
