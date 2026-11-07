@@ -238,7 +238,7 @@
           <button onclick="setPlantaFilter('Parada Prioridad')" id="pfilter-Parada Prioridad" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             🔴 Paradas (<span id="pcount-parada">0</span>)
           </button>
-          <button onclick="setPlantaFilter('Parada por disponibilidad de recurso')" id="pfilter-Parada por disponibilidad de recurso" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button onclick="setPlantaFilter('PARADA POR DISPONIBILIDAD DE RECURSO')" id="pfilter-PARADA POR DISPONIBILIDAD DE RECURSO" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             🟠 Parada por Recursos (<span id="pcount-recursos">0</span>)
           </button>
           <button onclick="setPlantaFilter('Cambio de Color')" id="pfilter-Cambio de Color" class="pfilter-tab px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -273,7 +273,7 @@
         <p class="text-xs text-slate-500 mb-4">Ingresa los datos generales una sola vez. Solo se guardarán las filas que modifiques; las demás máquinas conservarán su último reporte.</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs font-semibold">Responsable / coordinador<select id="quick-responsable" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
-          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 14:00)</option><option>Turno 2 (14:00 - 22:00)</option><option>Turno 3 (22:00 - 06:00)</option></select></label>
           <label class="text-xs font-semibold">Fecha del reporte<input id="quick-fecha" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900" /></label>
         </div>
       </div>
@@ -578,9 +578,9 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Turno *</label>
             <select id="form-turno" required class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
-              <option value="Turno 1 (06:00 - 13:00)">Turno 1 (06:00 - 13:00)</option>
-              <option value="Turno 2 y 4 (13:00 - 21:30)">Turno 2 y 4 (13:00 - 21:30)</option>
-              <option value="Turno 3 y 5 (20:00 - 06:00)">Turno 3 y 5 (20:00 - 06:00)</option>
+              <option value="Turno 1 (06:00 - 14:00)">Turno 1 (06:00 - 14:00)</option>
+              <option value="Turno 2 (14:00 - 22:00)">Turno 2 (14:00 - 22:00)</option>
+              <option value="Turno 3 (22:00 - 06:00)">Turno 3 (22:00 - 06:00)</option>
             </select>
           </div>
         </div>
@@ -593,7 +593,7 @@
               <option value="Operativa" class="text-emerald-600 font-bold">🟢 Operativa / En Producción</option>
               <option value="En Montaje" class="text-amber-600 font-bold">🟠 En Montaje / Ajuste</option>
               <option value="Parada Prioridad" class="text-rose-600 font-bold">🔴 Parada por Prioridad / Falta Componentes</option>
-              <option value="Parada por disponibilidad de recurso" class="text-orange-600 font-bold">🟠 Parada por disponibilidad de recurso</option>
+              <option value="PARADA POR DISPONIBILIDAD DE RECURSO" class="text-orange-600 font-bold">🟠 PARADA POR DISPONIBILIDAD DE RECURSO</option>
               <option value="Cambio de Color" class="text-purple-600 font-bold">🟣 Cambio de Color / Limpieza</option>
               <option value="Mantenimiento / Taller" class="text-slate-600 font-bold">⚪ En Mantenimiento / Taller Molde</option>
               <option value="Termino producción" class="text-cyan-700 font-bold">🔵 Termino producción</option>
@@ -686,18 +686,18 @@
       <div class="p-6 flex-1 overflow-y-auto space-y-4">
         
         <div class="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
-          <label for="wa-turno" class="block text-xs font-bold text-emerald-800 dark:text-emerald-200 mb-1">Turno del reporte:</label>
-          <select id="wa-turno" onchange="generateWhatsAppText()" class="w-full text-sm border border-emerald-300 dark:border-emerald-700 rounded-lg p-2 bg-white dark:bg-slate-800 font-semibold">
-            <option value="Turno 1 (06:00 - 13:00)">Turno 1 (06:00 - 13:00)</option>
-            <option value="Turno 2 y 4 (13:00 - 21:30)">Turno 2 y 4 (13:00 - 21:30)</option>
-            <option value="Turno 3 y 5 (20:00 - 06:00)">Turno 3 y 5 (20:00 - 06:00)</option>
+          <label for="wa-turno" class="block text-xs font-semibold text-emerald-800 dark:text-emerald-200 mb-1">Turno del reporte:</label>
+          <select id="wa-turno" onchange="generateWhatsAppText()" class="w-full rounded-lg border border-emerald-300 dark:border-emerald-700 p-2.5 bg-white dark:bg-slate-900 text-sm">
+            <option value="Turno 1 (06:00 - 14:00)">Turno 1 (06:00 - 14:00)</option>
+            <option value="Turno 2 (14:00 - 22:00)">Turno 2 (14:00 - 22:00)</option>
+            <option value="Turno 3 (22:00 - 06:00)">Turno 3 (22:00 - 06:00)</option>
           </select>
-          <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">Se enviará la última novedad registrada de cada máquina para el turno seleccionado. Las máquinas sin novedades en ese turno se omitirán.</p>
+          <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">Este selector solo agrega el turno al inicio del mensaje. No filtra ni modifica las novedades incluidas.</p>
         </div>
 
         <div class="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-xl border border-blue-200 dark:border-blue-800">
-          <p class="text-xs font-semibold text-blue-800 dark:text-blue-200">📋 El reporte de WhatsApp incluye siempre todas las máquinas, sin importar su estado ni los filtros aplicados en la vista de planta.</p>
-         
+          <p class="text-xs font-semibold text-blue-800 dark:text-blue-200">📋 El reporte de WhatsApp incluye todas las máquinas que tengan una novedad registrada, sin importar su estado, los filtros de la vista de planta ni el turno en que se registró.</p>
+          <p class="text-[11px] text-blue-700 dark:text-blue-300 mt-1">Se mostrará únicamente la última novedad registrada de cada máquina. Solo se omitirán las máquinas que nunca tengan novedades registradas.</p>
         </div>
 
         <div>
@@ -861,7 +861,6 @@
       "399 - CARLOS ANDRES MUÑOZ ARANGO",
       "213 - CRISTIAN POSADA RAMIREZ",
       "001 - JOSE FERNANDO BARROSO MERLANO"
-      
     ];
 
     // Lista exacta de las 29 máquinas sin numeración secuencial
@@ -911,7 +910,7 @@
         id: "rep-001",
         machineId: "88",
         responsable: "213 - CRISTIAN POSADA RAMIREZ",
-        turno: "Turno 1 (06:00 - 13:00)",
+        turno: "Turno 1 (06:00 - 14:00)",
         estado: "Operativa",
         presion: "140 Ton / 160 PSI",
         codArticulo: "ART-8802",
@@ -924,7 +923,7 @@
         id: "rep-002",
         machineId: "128-2",
         responsable: "16 - HAROLD BETANCUR POSSO",
-        turno: "Turno 1 (06:00 - 13:00)",
+        turno: "Turno 1 (06:00 - 14:00)",
         estado: "En Montaje",
         presion: "180 Ton",
         codArticulo: "ART-990",
@@ -937,7 +936,7 @@
         id: "rep-003",
         machineId: "218",
         responsable: "179 - JUAN CAMILO ZAPATA LONDOÑO",
-        turno: "Turno 3 y 5 (20:00 - 06:00)",
+        turno: "Turno 3 (22:00 - 06:00)",
         estado: "Parada Prioridad",
         presion: "--",
         codArticulo: "PAP-01",
@@ -950,7 +949,7 @@
         id: "rep-004",
         machineId: "400",
         responsable: "106 - OMAR DE JESUS RUIZ TORRES",
-        turno: "Turno 2 y 4 (13:00 - 21:30)",
+        turno: "Turno 2 (14:00 - 22:00)",
         estado: "Mantenimiento / Taller",
         presion: "400 Ton",
         codArticulo: "CAJ-30",
@@ -1215,7 +1214,7 @@
 
     // --- 5. RENDERIZADO PLANTA EN VIVO ---
     function renderStats() {
-      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "Parada por disponibilidad de recurso": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0, "Termino producción": 0 };
+      let counts = { Operativa: 0, "En Montaje": 0, "Parada Prioridad": 0, "PARADA POR DISPONIBILIDAD DE RECURSO": 0, "Cambio de Color": 0, "Mantenimiento / Taller": 0, "Termino producción": 0 };
 
       machinesList.forEach(m => {
         const state = currentPlantState[m.id]?.estado || 'Parada Prioridad';
@@ -1225,7 +1224,7 @@
       document.getElementById('stat-produccion').innerText = counts.Operativa || 0;
       document.getElementById('stat-montaje').innerText = counts["En Montaje"] || 0;
       document.getElementById('stat-parada').innerText = counts["Parada Prioridad"] || 0;
-      document.getElementById('stat-recursos').innerText = counts["Parada por disponibilidad de recurso"] || 0;
+      document.getElementById('stat-recursos').innerText = counts["PARADA POR DISPONIBILIDAD DE RECURSO"] || 0;
       document.getElementById('stat-color').innerText = counts["Cambio de Color"] || 0;
       document.getElementById('stat-taller').innerText = counts["Mantenimiento / Taller"] || 0;
 
@@ -1234,7 +1233,7 @@
       document.getElementById('pcount-operativa').innerText = counts.Operativa || 0;
       document.getElementById('pcount-montaje').innerText = counts["En Montaje"] || 0;
       document.getElementById('pcount-parada').innerText = counts["Parada Prioridad"] || 0;
-      document.getElementById('pcount-recursos').innerText = counts["Parada por disponibilidad de recurso"] || 0;
+      document.getElementById('pcount-recursos').innerText = counts["PARADA POR DISPONIBILIDAD DE RECURSO"] || 0;
       document.getElementById('pcount-color').innerText = counts["Cambio de Color"] || 0;
       document.getElementById('pcount-taller').innerText = counts["Mantenimiento / Taller"] || 0;
       document.getElementById('pcount-termino-produccion').innerText = counts["Termino producción"] || 0;
@@ -1308,7 +1307,7 @@
         badgeBg = 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300';
         dotColor = 'bg-rose-500';
         icon = 'fa-circle-stop';
-      } else if (estado === 'Parada por disponibilidad de recurso') {
+      } else if (estado === 'PARADA POR DISPONIBILIDAD DE RECURSO') {
         badgeBg = 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/80 dark:text-orange-300';
         dotColor = 'bg-orange-500';
         icon = 'fa-box-open';
@@ -1410,7 +1409,7 @@
       if (dateEl && !dateEl.value) { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); dateEl.value = d.toISOString().slice(0,10); }
       const body = document.getElementById('quick-report-body');
       if (!body) return;
-      const states = ['Operativa','En Montaje','Parada Prioridad','Parada por disponibilidad de recurso','Cambio de Color','Mantenimiento / Taller','Termino producción'];
+      const states = ['Operativa','En Montaje','Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Cambio de Color','Mantenimiento / Taller','Termino producción'];
       body.innerHTML = machinesList.map(m => {
         const r = currentPlantState[m.id] || {};
         const last = r.datetime ? new Date(r.datetime).toLocaleString('es-CO') : 'Sin reporte';
@@ -1484,7 +1483,7 @@
       document.getElementById('form-machine-id').value = machine.id;
 
       document.getElementById('form-responsable').value = rep.responsable || staffList[0] || '';
-      document.getElementById('form-turno').value = rep.turno || "Turno 1 (06:00 - 13:00)";
+      document.getElementById('form-turno').value = rep.turno || "Turno 1 (06:00 - 14:00)";
       document.getElementById('form-estado').value = rep.estado || "Operativa";
       document.getElementById('form-presion').value = rep.presion || "";
       document.getElementById('form-referencia').value = rep.referencia || "";
@@ -1639,7 +1638,7 @@
         if (log.estado === 'Operativa') stateBadge = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
         if (log.estado === 'En Montaje') stateBadge = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
         if (log.estado === 'Parada Prioridad') stateBadge = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
-        if (log.estado === 'Parada por disponibilidad de recurso') stateBadge = 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300';
+        if (log.estado === 'PARADA POR DISPONIBILIDAD DE RECURSO') stateBadge = 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300';
         if (log.estado === 'Termino producción') stateBadge = 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300';
 
         const tr = document.createElement('tr');
@@ -1654,7 +1653,7 @@
           <td class="p-3 text-slate-600 dark:text-slate-400">${log.codMolde || '--'} / ${log.codArticulo || '--'}</td>
           <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.presion || '--'}</td>
           <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.responsable || '--'}</td>
-          <td class="p-3 text-slate-500 max-w-xs truncate italic" title="${log.observaciones || ''}">${log.observaciones || 'Sin datos'}</td>
+          <td class="p-3 text-slate-500 max-w-[320px] whitespace-pre-wrap break-words align-top italic" title="${escapeQuick(log.observaciones || '')}">${log.observaciones ? escapeQuick(log.observaciones) : 'Sin datos'}</td>
           <td class="p-3 text-right space-x-1 whitespace-nowrap">
             <button onclick="restoreReportToCard('${log.id}')" title="Cargar este estado en la tarjeta de máquina" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg">
               <i class="fa-solid fa-arrow-rotate-left"></i>
@@ -1921,15 +1920,6 @@
 
     // --- 11. WHATSAPP GENERATION & SINGLE LOG COPY ---
     function openWhatsAppModal() {
-      // Selecciona inicialmente el turno del reporte más reciente; el usuario puede cambiarlo.
-      const latestReport = Object.values(currentPlantState)
-        .filter(r => r && r.turno)
-        .sort((a, b) => new Date(b.datetime || 0) - new Date(a.datetime || 0))[0];
-      const turnoSelect = document.getElementById('wa-turno');
-      const validTurnos = Array.from(turnoSelect.options).map(option => option.value);
-      turnoSelect.value = validTurnos.includes(latestReport?.turno)
-        ? latestReport.turno
-        : validTurnos[0];
       generateWhatsAppText();
       document.getElementById('modal-whatsapp').classList.remove('hidden');
     }
@@ -1937,10 +1927,10 @@
     function closeWhatsAppModal() { document.getElementById('modal-whatsapp').classList.add('hidden'); }
 
     function generateWhatsAppText() {
-      const turnoSeleccionado = document.getElementById('wa-turno').value;
       const dateStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const turnoReporte = document.getElementById('wa-turno')?.value || 'Turno 1 (06:00 - 14:00)';
 
-      let text = `🕒 *TURNO DE REFERENCIA:* ${turnoSeleccionado}\n📋 *REPORTE DE PLANTA - ÚLTIMAS NOVEDADES*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
+      let text = `🕒 *TURNO DEL REPORTE:* ${turnoReporte}\n📋 *REPORTE DE PLANTA - ÚLTIMAS NOVEDADES*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
 
       // El reporte ignora los filtros de planta y el turno de cada registro.
       // Incluye la última novedad disponible de cada máquina, sea cual sea el turno en que se registró.
@@ -1953,7 +1943,7 @@
 
         const emoji = estado === 'Operativa' ? '🟢'
           : estado === 'En Montaje' ? '🟠'
-          : estado === 'Parada por disponibilidad de recurso' ? '🟠'
+          : estado === 'PARADA POR DISPONIBILIDAD DE RECURSO' ? '🟠'
           : estado === 'Cambio de Color' ? '🟣'
           : estado === 'Termino producción' ? '🔵' : '🔴';
 
