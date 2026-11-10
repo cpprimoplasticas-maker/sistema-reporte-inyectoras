@@ -120,6 +120,7 @@
             <span>Guardar Turno Completo</span>
           </button>
 
+          <span id="current-role-label" class="hidden sm:inline text-xs font-semibold text-slate-300"></span>
           <button id="app-logout-button" onclick="logoutFromApp()" class="hidden inline-flex items-center space-x-2 bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-2 rounded-xl" title="Cerrar sesión"><i class="fa-solid fa-right-from-bracket"></i><span class="hidden lg:inline">Salir</span></button>
         </div>
 
@@ -273,7 +274,7 @@
         <p class="text-xs text-slate-500 mb-4">Ingresa los datos generales una sola vez. Solo se guardarán las filas que modifiques; las demás máquinas conservarán su último reporte.</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs font-semibold">Responsable / coordinador<select id="quick-responsable" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
-          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 14:00)</option><option>Turno 2 (14:00 - 22:00)</option><option>Turno 3 (22:00 - 06:00)</option></select></label>
           <label class="text-xs font-semibold">Fecha del reporte<input id="quick-fecha" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900" /></label>
         </div>
       </div>
@@ -578,9 +579,9 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Turno *</label>
             <select id="form-turno" required class="w-full text-xs border border-slate-300 dark:border-slate-600 rounded-xl p-2.5 bg-white dark:bg-slate-900">
-              <option value="Turno 1 (06:00 - 13:00)">Turno 1 (06:00 - 13:00)</option>
-              <option value="Turno 2 y 4 (13:00 - 21:30)">Turno 2 y 4 (13:00 - 21:30)</option>
-              <option value="Turno 3 y 5 (20:00 - 06:00)">Turno 3 y 5 (20:00 - 06:00)</option>
+              <option value="Turno 1 (06:00 - 14:00)">Turno 1 (06:00 - 14:00)</option>
+              <option value="Turno 2 (14:00 - 22:00)">Turno 2 (14:00 - 22:00)</option>
+              <option value="Turno 3 (22:00 - 06:00)">Turno 3 (22:00 - 06:00)</option>
             </select>
           </div>
         </div>
@@ -685,19 +686,16 @@
 
       <div class="p-6 flex-1 overflow-y-auto space-y-4">
         
-        <div class="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
-          <label for="wa-turno" class="block text-xs font-semibold text-emerald-800 dark:text-emerald-200 mb-1">Turno del reporte:</label>
-          <select id="wa-turno" onchange="generateWhatsAppText()" class="w-full rounded-lg border border-emerald-300 dark:border-emerald-700 p-2.5 bg-white dark:bg-slate-900 text-sm">
-            <option value="Turno 1 (06:00 - 13:00)">Turno 1 (06:00 - 13:00)</option>
-            <option value="Turno 2 y 4 (13:00 - 21:30)">Turno 2 y 4 (13:00 - 21:30)</option>
-            <option value="Turno 3 y 5 (20:00 - 06:00)">Turno 3 y 5 (20:00 - 06:00)</option>
+        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Filtrar estado de máquinas:</span>
+          <select id="wa-filter-status" onchange="generateWhatsAppText()" class="text-xs border border-slate-300 dark:border-slate-600 rounded-lg p-1.5 bg-white dark:bg-slate-800 font-medium">
+            <option value="todas">Todas las máquinas</option>
+            <option value="Operativa">Solo Operativas</option>
+            <option value="En Montaje">Solo En Montaje</option>
+            <option value="PARADA POR DISPONIBILIDAD DE RECURSO">Solo Parada por Recursos</option>
+            <option value="Paradas">Solo Paradas / Taller</option>
+            <option value="Termino producción">Solo Termino producción</option>
           </select>
-          <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">Este selector solo agrega el turno al inicio del mensaje. No filtra ni modifica las novedades incluidas.</p>
-        </div>
-
-        <div class="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-xl border border-blue-200 dark:border-blue-800">
-          <p class="text-xs font-semibold text-blue-800 dark:text-blue-200">📋 El reporte de WhatsApp incluye todas las máquinas que tengan una novedad registrada, sin importar su estado, los filtros de la vista de planta ni el turno en que se registró.</p>
-          <p class="text-[11px] text-blue-700 dark:text-blue-300 mt-1">Se mostrará únicamente la última novedad registrada de cada máquina. Solo se omitirán las máquinas que nunca tengan novedades registradas.</p>
         </div>
 
         <div>
@@ -860,7 +858,7 @@
       "239 - CARLOS ANDRES BRAVO BALLESTA",
       "399 - CARLOS ANDRES MUÑOZ ARANGO",
       "213 - CRISTIAN POSADA RAMIREZ",
-      "001 - JOSE FERNANDO BARROSO MERLANO"
+      "482 - JUAN ANDRES ZAPATA SANCHEZ"
     ];
 
     // Lista exacta de las 29 máquinas sin numeración secuencial
@@ -910,7 +908,7 @@
         id: "rep-001",
         machineId: "88",
         responsable: "213 - CRISTIAN POSADA RAMIREZ",
-        turno: "Turno 1 (06:00 - 13:00)",
+        turno: "Turno 1 (06:00 - 14:00)",
         estado: "Operativa",
         presion: "140 Ton / 160 PSI",
         codArticulo: "ART-8802",
@@ -923,7 +921,7 @@
         id: "rep-002",
         machineId: "128-2",
         responsable: "16 - HAROLD BETANCUR POSSO",
-        turno: "Turno 1 (06:00 - 13:00)",
+        turno: "Turno 1 (06:00 - 14:00)",
         estado: "En Montaje",
         presion: "180 Ton",
         codArticulo: "ART-990",
@@ -936,7 +934,7 @@
         id: "rep-003",
         machineId: "218",
         responsable: "179 - JUAN CAMILO ZAPATA LONDOÑO",
-        turno: "Turno 3 y 5 (20:00 - 06:00)",
+        turno: "Turno 3 (22:00 - 06:00)",
         estado: "Parada Prioridad",
         presion: "--",
         codArticulo: "PAP-01",
@@ -949,7 +947,7 @@
         id: "rep-004",
         machineId: "400",
         responsable: "106 - OMAR DE JESUS RUIZ TORRES",
-        turno: "Turno 2 y 4 (13:00 - 21:30)",
+        turno: "Turno 2 (14:00 - 22:00)",
         estado: "Mantenimiento / Taller",
         presion: "400 Ton",
         codArticulo: "CAJ-30",
@@ -1250,12 +1248,23 @@
       renderMachinesGrid();
     }
 
+    // Orden numérico descendente por identificador/nombre de máquina.
+    // El comparador numérico respeta también sufijos como 880-3, 880-2 y 880-1.
+    function sortMachinesDescending(list) {
+      const numericCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+      return [...list].sort((a, b) => {
+        const aLabel = String(a.name || a.id || '');
+        const bLabel = String(b.name || b.id || '');
+        return numericCollator.compare(bLabel, aLabel);
+      });
+    }
+
     function renderMachinesGrid() {
       const grid = document.getElementById('machines-grid');
       const query = document.getElementById('planta-search').value.toLowerCase().trim();
       grid.innerHTML = '';
 
-      const filtered = machinesList.filter(m => {
+      const filtered = sortMachinesDescending(machinesList.filter(m => {
         const rep = currentPlantState[m.id] || {};
         const estado = rep.estado || 'Parada Prioridad';
 
@@ -1269,7 +1278,7 @@
           return matchName || matchRef || matchMolde || matchArt;
         }
         return true;
-      });
+      }));
 
       if (filtered.length === 0) {
         grid.innerHTML = `
@@ -1410,7 +1419,7 @@
       const body = document.getElementById('quick-report-body');
       if (!body) return;
       const states = ['Operativa','En Montaje','Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Cambio de Color','Mantenimiento / Taller','Termino producción'];
-      body.innerHTML = machinesList.map(m => {
+      body.innerHTML = sortMachinesDescending(machinesList).map(m => {
         const r = currentPlantState[m.id] || {};
         const last = r.datetime ? new Date(r.datetime).toLocaleString('es-CO') : 'Sin reporte';
         return `<tr class="border-t border-slate-100 dark:border-slate-700" data-machine="${escapeQuick(m.id)}">
@@ -1483,7 +1492,7 @@
       document.getElementById('form-machine-id').value = machine.id;
 
       document.getElementById('form-responsable').value = rep.responsable || staffList[0] || '';
-      document.getElementById('form-turno').value = rep.turno || "Turno 1 (06:00 - 13:00)";
+      document.getElementById('form-turno').value = rep.turno || "Turno 1 (06:00 - 14:00)";
       document.getElementById('form-estado').value = rep.estado || "Operativa";
       document.getElementById('form-presion').value = rep.presion || "";
       document.getElementById('form-referencia').value = rep.referencia || "";
@@ -1653,7 +1662,7 @@
           <td class="p-3 text-slate-600 dark:text-slate-400">${log.codMolde || '--'} / ${log.codArticulo || '--'}</td>
           <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.presion || '--'}</td>
           <td class="p-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">${log.responsable || '--'}</td>
-          <td class="p-3 text-slate-500 max-w-[320px] whitespace-pre-wrap break-words align-top italic" title="${escapeQuick(log.observaciones || '')}">${log.observaciones ? escapeQuick(log.observaciones) : 'Sin datos'}</td>
+          <td class="p-3 text-slate-500 max-w-xs truncate italic" title="${log.observaciones || ''}">${log.observaciones || 'Sin datos'}</td>
           <td class="p-3 text-right space-x-1 whitespace-nowrap">
             <button onclick="restoreReportToCard('${log.id}')" title="Cargar este estado en la tarjeta de máquina" class="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg">
               <i class="fa-solid fa-arrow-rotate-left"></i>
@@ -1927,36 +1936,28 @@
     function closeWhatsAppModal() { document.getElementById('modal-whatsapp').classList.add('hidden'); }
 
     function generateWhatsAppText() {
+      const filter = document.getElementById('wa-filter-status').value;
       const dateStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const turnoReporte = document.getElementById('wa-turno')?.value || 'Turno 1 (06:00 - 13:00)';
 
-      let text = `🕒 *TURNO DEL REPORTE:* ${turnoReporte}\n📋 *REPORTE DE PLANTA - ÚLTIMAS NOVEDADES*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
+      let text = `📋 *REPORTE DE TURNO DE PLANTA - INYECCIÓN*\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
 
-      // El reporte ignora los filtros de planta y el turno de cada registro.
-      // Incluye la última novedad disponible de cada máquina, sea cual sea el turno en que se registró.
-      // Solo se omiten máquinas que nunca han tenido un registro.
-      const maquinasParaWhatsApp = machinesList.filter(m => !!currentPlantState[m.id]);
-
-      maquinasParaWhatsApp.forEach(m => {
+      machinesList.forEach(m => {
         const r = currentPlantState[m.id];
-        const estado = r.estado || 'Parada Prioridad';
+        const estado = r?.estado || 'Parada Prioridad';
+        if (filter !== 'todas') {
+          if (filter === 'Paradas' && !['Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Mantenimiento / Taller'].includes(estado)) return;
+          if (filter !== 'Paradas' && estado !== filter) return;
+        }
 
-        const emoji = estado === 'Operativa' ? '🟢'
-          : estado === 'En Montaje' ? '🟠'
-          : estado === 'PARADA POR DISPONIBILIDAD DE RECURSO' ? '🟠'
-          : estado === 'Cambio de Color' ? '🟣'
-          : estado === 'Termino producción' ? '🔵' : '🔴';
-
+        const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'PARADA POR DISPONIBILIDAD DE RECURSO' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : estado === 'Termino producción' ? '🔵' : '🔴';
         text += `${emoji} *MÁQUINA ${m.id}* [${estado}]\n`;
-        if (r.turno) text += `   • *Turno de la novedad:* ${r.turno}\n`;
-        if (r.referencia) text += `   • *Ref:* ${r.referencia}\n`;
-        if (r.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
-        if (r.observaciones) text += `   • *Obs:* ${r.observaciones}\n`;
-        if (r.responsable) text += `   • *Resp:* ${r.responsable}\n`;
+        if (r?.referencia) text += `   • *Ref:* ${r.referencia}\n`;
+        if (r?.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
+        if (r?.observaciones) text += `   • *Obs:* ${r.observaciones}\n`;
+        if (r?.responsable) text += `   • *Resp:* ${r.responsable}\n`;
         text += `\n`;
       });
 
-      text += `*Total de máquinas con última novedad registrada: ${maquinasParaWhatsApp.length}*\n`;
       text += `-----------------------------------\n📌 *Sistema Pro:* Formato Oficial FR-PRO-12`;
       const preview = document.getElementById('wa-preview-text');
       if (preview) preview.value = text;
@@ -2018,8 +2019,7 @@
       const log = historyLogs.find(r => r.id === logId);
       if (!log) return;
 
-      const text = `🕒 *TURNO:* ${log.turno || 'No especificado'}\n` +
-        `📌 *REPORTE INDIVIDUAL - MÁQUINA ${log.machineId}*\n` +
+      const text = `📌 *REPORTE INDIVIDUAL - MÁQUINA ${log.machineId}*\n` +
         `• *Estado:* ${log.estado}\n` +
         `• *Referencia:* ${log.referencia}\n` +
         `• *Molde:* ${log.codMolde || 'N/A'}\n` +
@@ -2086,6 +2086,7 @@
     }
 
     function switchTab(tab) {
+      if(!isAdminUser() && (tab === 'rapido' || tab === 'maestros')) tab = 'planta';
       document.getElementById('tab-content-planta').classList.add('hidden');
       document.getElementById('tab-content-rapido').classList.add('hidden');
       document.getElementById('tab-content-historial').classList.add('hidden');
@@ -2138,6 +2139,36 @@
       measurementId: "G-QL38CBN8R3"
     };
 
+    // --- PERFILES DE ACCESO INJECTION PRO ---
+    const ADMIN_UID = 'M5FjFuyf2aVXSAvFGXpNrca8Uvj1';
+    let currentUserRole = 'viewer';
+    function isAdminUser(){ return currentUserRole === 'admin'; }
+    function applyRolePermissions(){
+      const viewer = !isAdminUser();
+      document.body.classList.toggle('viewer-mode', viewer);
+      const roleLabel = document.getElementById('current-role-label');
+      if(roleLabel) roleLabel.textContent = viewer ? 'Modo visualización' : 'Administrador';
+      if(viewer && !document.getElementById('tab-content-planta').classList.contains('hidden')) return;
+      if(viewer) switchTab('planta');
+    }
+
+    const viewerPermissionStyles = document.createElement('style');
+    viewerPermissionStyles.textContent = `
+      body.viewer-mode #nav-rapido,
+      body.viewer-mode #nav-maestros,
+      body.viewer-mode #tab-content-rapido,
+      body.viewer-mode #tab-content-maestros,
+      body.viewer-mode button[onclick*="finalizeAndSaveTurn"],
+      body.viewer-mode button[onclick*="openReportModal"],
+      body.viewer-mode button[onclick*="restoreReportToCard"],
+      body.viewer-mode button[onclick*="deleteSingleHistoryLog"],
+      body.viewer-mode button[onclick*="clearAllHistory"],
+      body.viewer-mode button[onclick*="removeArticleMaster"],
+      body.viewer-mode button[onclick*="removeStaff"],
+      body.viewer-mode button[onclick*="removeMachine"] { display:none !important; }
+    `;
+    document.head.appendChild(viewerPermissionStyles);
+
     // --- SINCRONIZACIÓN EN LA NUBE (Firebase Auth + Firestore) ---
     const CLOUD_DATA_KEYS = ['inj_staff','inj_machines','inj_articles_master','inj_current_plant','inj_history_logs'];
     let cloudDb = null, cloudAuth = null, cloudUnsubscribers = [], cloudApplyingRemote = false, cloudReady = false, cloudReloadTimer = null;
@@ -2146,6 +2177,7 @@
       if(el){el.textContent='Estado: '+message; el.className='text-xs font-semibold '+(error?'text-rose-600':'text-emerald-600');}
     }
     function cloudSetItem(key, value) {
+      if(!isAdminUser()) return;
       if(cloudApplyingRemote || !cloudReady || !CLOUD_DATA_KEYS.includes(key)) return;
       cloudDb.collection('injectionProData').doc(key).set({value: value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()})
         .then(()=>cloudStatus('conectado · cambios sincronizados'))
@@ -2181,11 +2213,14 @@
         cloudAuth=firebase.auth(); cloudDb=firebase.firestore();
         cloudStatus('conectando…');
         await cloudAuth.signInWithEmailAndPassword(email,password);
+        currentUserRole = cloudAuth.currentUser && cloudAuth.currentUser.uid === ADMIN_UID ? 'admin' : 'viewer';
+        applyRolePermissions();
         cloudUnsubscribers.forEach(fn=>fn()); cloudUnsubscribers=[];
         const collection=cloudDb.collection('injectionProData');
         const snapshot=await collection.get();
         if(snapshot.empty){
-          // Solo inicializa la nube si todavía no existe una base compartida.
+          if(!isAdminUser()) throw new Error('La base compartida aún no tiene datos. Ingresa primero con la cuenta administradora para inicializarla.');
+          // Solo el administrador puede inicializar la nube.
           const batch=cloudDb.batch();
           CLOUD_DATA_KEYS.forEach(key=>{const raw=localStorage.getItem(key); if(raw!==null) batch.set(collection.doc(key),{value:raw,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});});
           await batch.commit();
@@ -2242,6 +2277,9 @@
       if(button){button.disabled=false;button.innerHTML='<i class="fa-solid fa-right-to-bracket mr-2"></i>Iniciar sesión';}
     }
     function logoutFromApp(){
+      currentUserRole='viewer';
+      document.body.classList.remove('viewer-mode');
+      const roleLabel=document.getElementById('current-role-label'); if(roleLabel) roleLabel.textContent='';
       disconnectCloudSync();
       const gate=document.getElementById('app-login-gate'); if(gate) gate.classList.remove('hidden');
       const logoutButton=document.getElementById('app-logout-button'); if(logoutButton) logoutButton.classList.add('hidden');
