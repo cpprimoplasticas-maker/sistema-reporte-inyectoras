@@ -700,8 +700,11 @@
             <option value="todas">Todas las máquinas</option>
             <option value="Operativa">Solo Operativas</option>
             <option value="En Montaje">Solo En Montaje</option>
-            <option value="PARADA POR DISPONIBILIDAD DE RECURSO">Solo Parada por Recursos</option>
-            <option value="Paradas">Solo Paradas / Taller</option>
+            <option value="Parada Prioridad">Solo Parada por Prioridad</option>
+            <option value="PARADA POR DISPONIBILIDAD DE RECURSO">Solo Parada por Disponibilidad de Recurso</option>
+            <option value="Cambio de Color">Solo Cambio de Color</option>
+            <option value="Mantenimiento / Taller">Solo Mantenimiento / Taller</option>
+            <option value="Paradas">Todas las Paradas / Taller</option>
             <option value="Termino producción">Solo Termino producción</option>
           </select>
           </label>
@@ -865,7 +868,7 @@
       "239 - CARLOS ANDRES BRAVO BALLESTA",
       "399 - CARLOS ANDRES MUÑOZ ARANGO",
       "213 - CRISTIAN POSADA RAMIREZ",
-      "001 - JOSE FERNANDO BARROSO MERLANOZ"
+      "001 - JOSE FERNANDO BARROSO MERLANO"
     ];
 
     // Lista exacta de las 29 máquinas sin numeración secuencial
@@ -1949,41 +1952,63 @@
       const dateStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
       let text = `📋 *REPORTE DE TURNO DE PLANTA - INYECCIÓN*\n🕒 *Turno:* ${turnoLabel}\n📅 *Fecha:* ${dateStr}\n-----------------------------------\n\n`;
-      const machinesByStatus = new Map();
 
       // El turno seleccionado solo identifica el reporte; no excluye máquinas.
-      // Se agrupan las máquinas por su estado actual y se conserva el orden descendente.
+      // Los nombres y el orden de los estados se toman del catálogo vigente del formulario.
+      const statusSelect = document.getElementById('form-estado');
+      const statusOrder = statusSelect
+        ? Array.from(statusSelect.options).map(option => option.value).filter(Boolean)
+        : [];
+      const groups = new Map();
+
       sortMachinesDescending(machinesList).forEach(m => {
         const r = currentPlantState[m.id];
         const estado = r?.estado || 'Parada Prioridad';
+
         if (filter !== 'todas') {
-          if (filter === 'Paradas' && !['Parada Prioridad','PARADA POR DISPONIBILIDAD DE RECURSO','Mantenimiento / Taller'].includes(estado)) return;
+          if (filter === 'Paradas' && !['Parada Prioridad', 'PARADA POR DISPONIBILIDAD DE RECURSO', 'Mantenimiento / Taller'].includes(estado)) return;
           if (filter !== 'Paradas' && estado !== filter) return;
         }
-        if (!machinesByStatus.has(estado)) machinesByStatus.set(estado, []);
-        machinesByStatus.get(estado).push({ machine: m, report: r });
+
+        if (!groups.has(estado)) groups.set(estado, []);
+        groups.get(estado).push({ machine: m, report: r });
       });
 
-      if (machinesByStatus.size === 0) {
-        text += 'No hay máquinas que coincidan con el filtro seleccionado.\n\n';
-      } else {
-        // Los grupos se presentan alfabéticamente por estado; dentro de cada grupo,
-        // las máquinas mantienen el orden numérico descendente.
-        [...machinesByStatus.keys()].sort((a, b) => a.localeCompare(b, 'es')).forEach(estado => {
-          const emoji = estado === 'Operativa' ? '🟢' : estado === 'En Montaje' ? '🟠' : estado === 'PARADA POR DISPONIBILIDAD DE RECURSO' ? '🟠' : estado === 'Cambio de Color' ? '🟣' : estado === 'Termino producción' ? '🔵' : '🔴';
-          const items = machinesByStatus.get(estado);
-          text += `${emoji} *${estado.toLocaleUpperCase('es')} (${items.length})*\n`;
-          text += `────────────────────\n`;
-          items.forEach(({ machine: m, report: r }) => {
-            text += `• *MÁQUINA ${m.id}*\n`;
-            if (r?.referencia) text += `   • *Ref:* ${r.referencia}\n`;
-            if (r?.codMolde) text += `   • *Molde:* ${r.codMolde} | *Presión:* ${r.presion || 'N/A'}\n`;
-            if (r?.observaciones) text += `   • *Obs:* ${r.observaciones}\n`;
-            if (r?.responsable) text += `   • *Resp:* ${r.responsable}\n`;
-          });
-          text += '\n';
-        });
+      const emojiForStatus = estado => {
+        if (estado === 'Operativa') return '🟢';
+        if (estado === 'En Montaje') return '🟠';
+        if (estado === 'PARADA POR DISPONIBILIDAD DE RECURSO') return '🟠';
+        if (estado === 'Cambio de Color') return '🟣';
+        if (estado === 'Termino producción') return '🔵';
+        if (estado === 'Mantenimiento / Taller') return '⚪';
+        return '🔴';
+      };
+
+      const orderedStatuses = [
+        ...statusOrder.filter(status => groups.has(status)),
+        ...Array.from(groups.keys()).filter(status => !statusOrder.includes(status))
+      ];
+
+      if (orderedStatuses.length === 0) {
+        text += '*No hay máquinas para el filtro seleccionado.*\n';
       }
+
+      orderedStatuses.forEach(estado => {
+        const machines = groups.get(estado);
+        text += `${emojiForStatus(estado)} *${estado.toUpperCase()} (${machines.length} ${machines.length === 1 ? 'máquina' : 'máquinas'})*\n`;
+        text += `-----------------------------------\n`;
+
+        machines.forEach(({ machine: m, report: r }) => {
+          // Separadores reforzados para distinguir claramente cada máquina al pegar en WhatsApp.
+          text += `\n━━━━━━━━━━━━━━━━━━━━\n🏭 *INICIO DE MÁQUINA ${m.id}*\n━━━━━━━━━━━━━━━━━━━━\n`;
+          if (r?.referencia) text += `🔹 *Ref:* ${r.referencia}\n`;
+          if (r?.codMolde) text += `🔹 *Molde:* ${r.codMolde}\n`;
+          if (r?.presion) text += `🔹 *Presión:* ${r.presion}\n`;
+          if (r?.observaciones) text += `📝 *Obs:* ${r.observaciones}\n`;
+          if (r?.responsable) text += `👤 *Resp:* ${r.responsable}\n`;
+          text += `━━━━━━━━━━━━━━━━━━━━\n`;
+        });
+      });
 
       text += `-----------------------------------\n📌 *Sistema Pro:* Formato Oficial FR-PRO-12`;
       const preview = document.getElementById('wa-preview-text');
