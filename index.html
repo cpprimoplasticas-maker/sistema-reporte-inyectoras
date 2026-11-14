@@ -1993,10 +1993,13 @@
         text += '*No hay máquinas para el filtro seleccionado.*\n';
       }
 
-      orderedStatuses.forEach(estado => {
+      orderedStatuses.forEach((estado, groupIndex) => {
         const machines = groups.get(estado);
-        text += `${emojiForStatus(estado)} *${estado.toUpperCase()} (${machines.length} ${machines.length === 1 ? 'máquina' : 'máquinas'})*\n`;
-        text += `-----------------------------------\n`;
+        // Separación amplia entre grupos para que el nuevo encabezado de estado
+        // no quede unido visualmente a la última máquina del grupo anterior.
+        text += `\n\n══════════════════════════════════\n\n`;
+        text += `${emojiForStatus(estado)} *GRUPO: ${estado.toUpperCase()} (${machines.length} ${machines.length === 1 ? 'máquina' : 'máquinas'})*\n`;
+        text += `══════════════════════════════════\n\n`;
 
         machines.forEach(({ machine: m, report: r }) => {
           // Separadores reforzados para distinguir claramente cada máquina al pegar en WhatsApp.
