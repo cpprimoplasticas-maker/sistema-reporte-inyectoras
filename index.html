@@ -144,6 +144,10 @@
           <span id="badge-total-history" class="ml-1 px-2 py-0.5 text-xs bg-brand-900/80 text-brand-300 font-bold rounded-full">0</span>
         </button>
 
+        <button onclick="switchTab('asignacion')" id="nav-asignacion" class="py-3 px-1 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
+          <i class="fa-solid fa-shuffle"></i><span>Asignación de Máquinas</span>
+        </button>
+
         <button onclick="switchTab('maestros')" id="nav-maestros" class="py-3 px-1 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center space-x-2">
           <i class="fa-solid fa-sliders"></i>
           <span>Gestión & Maestros</span>
@@ -398,6 +402,39 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- MÓDULO: PROGRAMACIÓN Y ASIGNACIÓN ALEATORIA -->
+    <div id="tab-content-asignacion" class="space-y-6 hidden">
+      <section id="assignment-coordinator-panel" class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <div class="w-11 h-11 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center"><i class="fa-solid fa-clipboard-list text-xl"></i></div>
+          <div><h2 class="font-black">Programación del coordinador</h2><p class="text-xs text-slate-500">Selecciona las máquinas disponibles para el turno y define el máximo por operario.</p></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="text-xs font-semibold">Coordinador<select id="assign-coordinator" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
+          <label class="text-xs font-semibold">Turno<select id="assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Fecha<input id="assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></label>
+        </div>
+        <label class="block text-xs font-semibold">Máximo de máquinas por operario
+          <select id="assign-max-machines" class="mt-1 w-full sm:w-48 rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option value="1">1 máquina</option><option value="2">2 máquinas</option><option value="3">3 máquinas</option><option value="4">4 máquinas</option><option value="5">5 máquinas</option></select>
+        </label>
+        <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-sm">Máquinas programadas</h3><p class="text-xs text-slate-500">Pequeñas: hasta 500-2. Grandes: desde 650. Los números entre 501 y 649 quedan fuera de la clasificación.</p></div><div class="flex gap-2"><button onclick="toggleAssignmentMachines(true)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Seleccionar todas</button><button onclick="toggleAssignmentMachines(false)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Limpiar</button></div></div>
+        <div id="assignment-machine-picker" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 max-h-72 overflow-y-auto p-2 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+        <div class="flex flex-wrap items-center justify-between gap-3"><p id="assignment-program-status" class="text-xs text-slate-500">No hay programación guardada para este turno.</p><button onclick="saveMachineProgram()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar programación</button></div>
+      </section>
+
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center"><i class="fa-solid fa-id-card text-xl"></i></div><div><h2 class="font-black">Pantalla del operario</h2><p class="text-xs text-slate-500">Ingresa tu código para recibir aleatoriamente las máquinas programadas.</p></div></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs font-semibold">Fecha de asignación<input id="operator-assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></label><label class="text-xs font-semibold">Turno<select id="operator-assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label></div>
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end"><label class="text-xs font-semibold">Código del operario<input id="assignment-operator-code" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 213" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 p-3 bg-white dark:bg-slate-900 text-lg font-bold tracking-wider" onkeydown="if(event.key==='Enter') assignMachinesToOperator()"></label><button onclick="assignMachinesToOperator()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl"><i class="fa-solid fa-dice mr-2"></i>Asignar mis máquinas</button></div>
+        <div id="assignment-result" class="hidden rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-4"></div>
+      </section>
+
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+        <div class="flex items-center justify-between gap-2"><div><h3 class="font-black">Registro de asignaciones</h3><p class="text-xs text-slate-500">Consulta de las máquinas entregadas por operario y turno.</p></div><button onclick="renderAssignmentHistory()" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button></div>
+        <div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="bg-slate-100 dark:bg-slate-900"><tr><th class="p-2">Fecha / turno</th><th class="p-2">Operario</th><th class="p-2">Máquinas asignadas</th><th class="p-2">Grupo</th><th class="p-2">Coordinador</th></tr></thead><tbody id="assignment-history-body"></tbody></table></div>
+      </section>
     </div>
 
     <!-- ========================================== -->
@@ -975,6 +1012,7 @@
     let currentPlantState = {}; // Tarjeta viva de la máquina -> Último reporte
     let historyLogs = [];       // Vector persistente con TODOS los reportes generados
     let activePlantaFilter = 'todas';
+    let assignmentData = { programs: {}, records: [] };
 
     // --- 3. INICIALIZACIÓN Y PERSISTENCIA (LOCAL STORAGE) ---
     function initApp() {
@@ -1006,6 +1044,10 @@
       } else {
         rebuildPlantStateFromHistory();
       }
+
+      const storedAssignments = localStorage.getItem('inj_assignment_data');
+      if (storedAssignments) { try { assignmentData = JSON.parse(storedAssignments); } catch(e) { assignmentData = { programs:{}, records:[] }; } }
+      else localStorage.setItem('inj_assignment_data', JSON.stringify(assignmentData));
 
       // Cargar modo oscuro previo si existe
       if (localStorage.getItem('inj_dark_mode') === 'true') {
@@ -2140,21 +2182,137 @@
       window.requestAnimationFrame(refresh);
     }
 
+    // --- ASIGNACIÓN ALEATORIA DE MÁQUINAS ---
+    function assignmentToday(){ return new Date().toLocaleDateString('en-CA'); }
+    function assignmentShiftKey(date, shift){ return `${date}__${shift}`; }
+    function machineAssignmentGroup(machineId){
+      const base = parseInt(String(machineId).match(/^\d+/)?.[0] || '', 10);
+      if(!Number.isFinite(base)) return 'sin-clasificar';
+      if(base <= 500) return 'pequeña';
+      if(base >= 650) return 'grande';
+      return 'sin-clasificar';
+    }
+    function getStaffCodeAndName(entry){
+      const raw = typeof entry === 'string' ? entry : (entry && (entry.name || entry.nombre || ''));
+      const match = String(raw).trim().match(/^(\S+)\s*[-–]\s*(.+)$/);
+      return match ? {code:match[1].trim(), name:match[2].trim()} : {code:'', name:String(raw).trim()};
+    }
+    function currentAssignmentKey(){
+      const date = document.getElementById('assign-date')?.value || assignmentToday();
+      const shift = document.getElementById('assign-shift')?.value || 'Turno 1';
+      return assignmentShiftKey(date, shift);
+    }
+    function renderAssignmentModule(){
+      const coord = document.getElementById('assign-coordinator');
+      if(coord){
+        const previous=coord.value;
+        coord.innerHTML='<option value="">Selecciona coordinador</option>'+staffList.map(x=>{const p=getStaffCodeAndName(x);return `<option value="${escapeQuick(p.name)}">${escapeQuick(p.name)}</option>`}).join('');
+        if(previous) coord.value=previous;
+      }
+      const date=document.getElementById('assign-date'); if(date && !date.value) date.value=assignmentToday();
+      const opDate=document.getElementById('operator-assign-date'); if(opDate && !opDate.value) opDate.value=assignmentToday();
+      const picker=document.getElementById('assignment-machine-picker');
+      if(picker){
+        const key=currentAssignmentKey(), program=assignmentData.programs[key];
+        picker.innerHTML=sortMachinesDescending(machinesList).map(m=>{
+          const checked=program ? program.machineIds.includes(m.id) : false;
+          const group=machineAssignmentGroup(m.id);
+          const label=group==='pequeña'?'Pequeña':group==='grande'?'Grande':'Sin clasificar';
+          return `<label class="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 p-2 text-xs"><input class="assignment-machine-check" type="checkbox" value="${escapeQuick(m.id)}" ${checked?'checked':''}><span class="font-bold">${escapeQuick(m.id)}</span><span class="text-[10px] text-slate-500">${label}</span></label>`;
+        }).join('');
+        const status=document.getElementById('assignment-program-status');
+        if(status) status.textContent=program?`Programación guardada: ${program.machineIds.length} máquinas · máximo ${program.maxMachines} por operario · ${program.coordinator}`:'No hay programación guardada para este turno.';
+      }
+      const adminPanel=document.getElementById('assignment-coordinator-panel');
+      if(adminPanel) adminPanel.classList.toggle('hidden',!isAdminUser());
+      renderAssignmentHistory();
+    }
+    function toggleAssignmentMachines(checked){
+      document.querySelectorAll('.assignment-machine-check').forEach(el=>el.checked=checked);
+    }
+    function persistAssignmentData(){
+      const raw=JSON.stringify(assignmentData);
+      localStorage.setItem('inj_assignment_data',raw);
+      cloudSetItem('inj_assignment_data',raw);
+    }
+    function saveMachineProgram(){
+      if(!isAdminUser()){showToast('Solo el coordinador autorizado puede programar máquinas.','error');return;}
+      const date=document.getElementById('assign-date').value || assignmentToday();
+      const shift=document.getElementById('assign-shift').value;
+      const coordinator=document.getElementById('assign-coordinator').value;
+      const machineIds=[...document.querySelectorAll('.assignment-machine-check:checked')].map(el=>el.value);
+      const maxMachines=parseInt(document.getElementById('assign-max-machines').value,10)||1;
+      if(!coordinator){showToast('Selecciona el coordinador responsable.','error');return;}
+      if(!machineIds.length){showToast('Selecciona al menos una máquina.','error');return;}
+      const unclassified=machineIds.filter(id=>machineAssignmentGroup(id)==='sin-clasificar');
+      if(unclassified.length){showToast('Hay máquinas entre 501 y 649 o sin número; no se pueden clasificar. Retíralas de la programación.','error');return;}
+      const key=assignmentShiftKey(date,shift);
+      const existing=assignmentData.programs[key];
+      if(existing && assignmentData.records.some(r=>r.programKey===key) && !confirm('Ya existen asignaciones para este turno. Cambiar la programación puede dejar registros anteriores fuera de la programación. ¿Continuar?')) return;
+      assignmentData.programs[key]={date,shift,coordinator,machineIds,maxMachines,savedAt:new Date().toISOString()};
+      persistAssignmentData(); renderAssignmentModule();
+      showToast('Programación de máquinas guardada.');
+    }
+    function assignMachinesToOperator(){
+      const code=document.getElementById('assignment-operator-code').value.trim();
+      const result=document.getElementById('assignment-result');
+      result.classList.remove('hidden');
+      if(!code){result.innerHTML='<p class="text-rose-700 font-bold">Ingresa tu código de operario.</p>';return;}
+      const staff=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===code.toLowerCase());
+      if(!staff){result.innerHTML='<p class="text-rose-700 font-bold">Código no encontrado. Verifica con el coordinador.</p>';return;}
+      const date=document.getElementById('assign-date').value || assignmentToday();
+      const shift=document.getElementById('assign-shift').value;
+      const key=assignmentShiftKey(date,shift);
+      const program=assignmentData.programs[key];
+      if(!program){result.innerHTML='<p class="text-rose-700 font-bold">Todavía no hay máquinas programadas para este turno.</p>';return;}
+      const already=assignmentData.records.find(r=>r.programKey===key && r.operatorCode.toLowerCase()===code.toLowerCase());
+      if(already){result.innerHTML=`<p class="font-bold text-amber-700">Ya tienes una asignación registrada para este turno:</p><p class="mt-2 font-black text-lg">${already.machineIds.join(' · ')}</p><p class="text-xs mt-1">Si necesitas un cambio, solicita apoyo al coordinador.</p>`;return;}
+      const used=new Set(assignmentData.records.filter(r=>r.programKey===key).flatMap(r=>r.machineIds));
+      const available=program.machineIds.filter(id=>!used.has(id));
+      if(!available.length){result.innerHTML='<p class="text-rose-700 font-bold">Ya no quedan máquinas disponibles en esta programación.</p>';return;}
+      const previous=[...assignmentData.records].filter(r=>r.operatorCode.toLowerCase()===code.toLowerCase()).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+      const previousPrimary=previous && (previous.primaryGroup || (previous.group==='mixta' ? null : previous.group));
+      const preferred=!previousPrimary?'pequeña':(previous.date===date?previousPrimary:(previousPrimary==='pequeña'?'grande':'pequeña'));
+      const small=available.filter(id=>machineAssignmentGroup(id)==='pequeña');
+      const large=available.filter(id=>machineAssignmentGroup(id)==='grande');
+      let firstPool=preferred==='pequeña'?small:large;
+      let fallbackPool=preferred==='pequeña'?large:small;
+      if(!firstPool.length){firstPool=fallbackPool;fallbackPool=[];}
+      const shuffled=arr=>arr.map(v=>({v,k:Math.random()})).sort((a,b)=>a.k-b.k).map(x=>x.v);
+      const chosen=shuffled(firstPool).slice(0,program.maxMachines);
+      if(chosen.length<program.maxMachines) chosen.push(...shuffled(fallbackPool).slice(0,program.maxMachines-chosen.length));
+      if(!chosen.length){result.innerHTML='<p class="text-rose-700 font-bold">No hay máquinas disponibles para asignar.</p>';return;}
+      const groups=[...new Set(chosen.map(machineAssignmentGroup))];
+      const groupLabel=groups.length>1?'mixta':groups[0];
+      const record={id:`${Date.now()}_${code}`,programKey:key,date,shift,operatorCode:staff.code,operatorName:staff.name,machineIds:chosen,group:groupLabel,primaryGroup:machineAssignmentGroup(chosen[0]),coordinator:program.coordinator,createdAt:new Date().toISOString()};
+      assignmentData.records.push(record); persistAssignmentData(); renderAssignmentHistory();
+      result.innerHTML=`<div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Asignación realizada</div><p class="mt-2 text-sm font-semibold">${escapeQuick(staff.name)} · Código ${escapeQuick(staff.code)}</p><div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">${chosen.map(id=>`<div class="rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 p-3 text-center"><div class="text-[10px] text-slate-500">${machineAssignmentGroup(id)==='pequeña'?'MÁQUINA PEQUEÑA':'MÁQUINA GRANDE'}</div><div class="text-xl font-black">${escapeQuick(id)}</div></div>`).join('')}</div><p class="text-xs mt-3 text-slate-600 dark:text-slate-300">Turno: ${escapeQuick(shift)} · Fecha: ${escapeQuick(date)}</p>`;
+      document.getElementById('assignment-operator-code').value='';
+    }
+    function renderAssignmentHistory(){
+      const body=document.getElementById('assignment-history-body'); if(!body)return;
+      const rows=[...assignmentData.records].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+      body.innerHTML=rows.length?rows.map(r=>`<tr class="border-b border-slate-100 dark:border-slate-700"><td class="p-2">${escapeQuick(r.date)}<br><span class="text-slate-500">${escapeQuick(r.shift)}</span></td><td class="p-2 font-semibold">${escapeQuick(r.operatorName)}<br><span class="text-slate-500">Código ${escapeQuick(r.operatorCode)}</span></td><td class="p-2 font-black">${r.machineIds.map(escapeHtml).join(' · ')}</td><td class="p-2">${escapeQuick(r.group)}</td><td class="p-2">${escapeQuick(r.coordinator)}</td></tr>`).join(''):'<tr><td colspan="5" class="p-4 text-center text-slate-500">Todavía no hay asignaciones registradas.</td></tr>';
+    }
+
     function switchTab(tab) {
       if(!isAdminUser() && (tab === 'rapido' || tab === 'maestros')) tab = 'planta';
       document.getElementById('tab-content-planta').classList.add('hidden');
       document.getElementById('tab-content-rapido').classList.add('hidden');
       document.getElementById('tab-content-historial').classList.add('hidden');
       document.getElementById('tab-content-maestros').classList.add('hidden');
+      document.getElementById('tab-content-asignacion').classList.add('hidden');
 
       document.getElementById('nav-planta').classList.remove('nav-tab-active');
       document.getElementById('nav-rapido').classList.remove('nav-tab-active');
       document.getElementById('nav-historial').classList.remove('nav-tab-active');
       document.getElementById('nav-maestros').classList.remove('nav-tab-active');
+      document.getElementById('nav-asignacion').classList.remove('nav-tab-active');
 
       document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
       document.getElementById(`nav-${tab}`).classList.add('nav-tab-active');
 
+      if (tab === 'asignacion') { renderAssignmentModule(); }
       if (tab === 'rapido') { renderQuickReportTable(); }
       if (tab === 'historial') {
         renderHistorySection();
@@ -2225,7 +2383,7 @@
     document.head.appendChild(viewerPermissionStyles);
 
     // --- SINCRONIZACIÓN EN LA NUBE (Firebase Auth + Firestore) ---
-    const CLOUD_DATA_KEYS = ['inj_staff','inj_machines','inj_articles_master','inj_current_plant','inj_history_logs'];
+    const CLOUD_DATA_KEYS = ['inj_staff','inj_machines','inj_articles_master','inj_current_plant','inj_history_logs','inj_assignment_data'];
     let cloudDb = null, cloudAuth = null, cloudUnsubscribers = [], cloudApplyingRemote = false, cloudReady = false, cloudReloadTimer = null;
     function cloudStatus(message, error=false) {
       const el=document.getElementById('cloud-sync-status');
@@ -2246,10 +2404,12 @@
         else if(key==='inj_articles_master') articlesMaster=value;
         else if(key==='inj_current_plant') currentPlantState=value;
         else if(key==='inj_history_logs') historyLogs=value;
+        else if(key==='inj_assignment_data') assignmentData=value;
       } catch(e){ console.error('Dato remoto inválido',key,e); }
     }
     function renderAfterCloudUpdate(){
       populateFormDropdowns(); renderStats(); renderMachinesGrid(); renderQuickReportTable();
+      renderAssignmentModule();
       renderStaffList(); renderMachinesMasterList(); renderArticlesMasterTable(); populateHistoryFilterDropdowns();
       const badge=document.getElementById('badge-total-history'); if(badge) badge.innerText=historyLogs.length;
       const hist=document.getElementById('tab-content-historial'); if(hist && !hist.classList.contains('hidden')) renderHistorySection();
@@ -2352,6 +2512,7 @@
     Storage.prototype.setItem=function(key,value){originalLocalStorageSetItem.call(this,key,value); if(this===localStorage) cloudSetItem(String(key),String(value));};
 
     // Inicializar la aplicación en carga de ventana
+    document.addEventListener('change',e=>{if(e.target && ['assign-date','assign-shift'].includes(e.target.id)) renderAssignmentModule();});
     window.onload = function(){ initApp(); restoreCloudConfigField(); };
   </script>
 </body>
