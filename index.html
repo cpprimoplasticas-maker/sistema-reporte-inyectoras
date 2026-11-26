@@ -278,7 +278,7 @@
         <p class="text-xs text-slate-500 mb-4">Ingresa los datos generales una sola vez. Solo se guardarán las filas que modifiques; las demás máquinas conservarán su último reporte.</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs font-semibold">Responsable / coordinador<select id="quick-responsable" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
-          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Turno<select id="quick-turno" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option value="Turno 1">Turno 1</option><option value="Turno 2">Turno 2</option><option value="Turno 3">Turno 3</option><option value="Turno 4">Turno 4</option><option value="Turno 5">Turno 5</option></select></label>
           <label class="text-xs font-semibold">Fecha del reporte<input id="quick-fecha" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900" /></label>
         </div>
       </div>
@@ -414,7 +414,7 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs font-semibold">Coordinador<select id="assign-coordinator" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></select></label>
-          <label class="text-xs font-semibold">Turno<select id="assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Turno<select id="assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option value="Turno 1">Turno 1</option><option value="Turno 2">Turno 2</option><option value="Turno 3">Turno 3</option><option value="Turno 4">Turno 4</option><option value="Turno 5">Turno 5</option></select></label>
           <label class="text-xs font-semibold">Fecha<input id="assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></label>
         </div>
         <label class="block text-xs font-semibold">Máximo de máquinas por operario
@@ -437,7 +437,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
           <label class="text-xs font-semibold">Filtrar por día<input id="assignment-filter-day" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2 bg-white dark:bg-slate-900"></label>
           <label class="text-xs font-semibold">Filtrar por mes<input id="assignment-filter-month" type="month" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2 bg-white dark:bg-slate-900"></label>
-          <label class="text-xs font-semibold">Filtrar por turno<select id="assignment-filter-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2 bg-white dark:bg-slate-900"><option value="">Todos los turnos</option><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label>
+          <label class="text-xs font-semibold">Filtrar por turno<select id="assignment-filter-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2 bg-white dark:bg-slate-900"><option value="">Todos los turnos</option><option value="Turno 1">Turno 1</option><option value="Turno 2">Turno 2</option><option value="Turno 3">Turno 3</option><option value="Turno 4">Turno 4</option><option value="Turno 5">Turno 5</option></select></label>
           <div class="sm:col-span-3 flex flex-wrap items-center justify-between gap-2"><p class="text-[11px] text-slate-500">Puedes usar un filtro individual o combinar varios.</p><div class="flex gap-2"><button onclick="clearAssignmentFilters()" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Limpiar filtros</button><button onclick="exportAssignmentHistoryExcel()" class="text-xs font-bold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white"><i class="fa-solid fa-file-excel mr-2"></i>Descargar Excel</button></div></div>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="bg-slate-100 dark:bg-slate-900"><tr><th class="p-2">Fecha / turno</th><th class="p-2">Operario</th><th class="p-2">Máquinas asignadas</th><th class="p-2">Artículo por máquina</th><th class="p-2">Grupo</th><th class="p-2">Coordinador</th><th class="p-2">Acciones</th></tr></thead><tbody id="assignment-history-body"></tbody></table></div>
