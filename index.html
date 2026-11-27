@@ -423,11 +423,15 @@
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-sm">Máquinas programadas</h3><p class="text-xs text-slate-500">Pequeñas: hasta 500-2. Grandes: desde 650. Los números entre 501 y 649 quedan fuera de la clasificación.</p><p class="text-xs text-slate-500 mt-1">Puedes escribir un mensaje opcional e independiente para cada máquina.</p></div><div class="flex gap-2"><button onclick="toggleAssignmentMachines(true)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Seleccionar todas</button><button onclick="toggleAssignmentMachines(false)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Limpiar</button></div></div>
         <div id="assignment-machine-picker" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 max-h-72 overflow-y-auto p-2 rounded-xl border border-slate-200 dark:border-slate-700"></div>
         <div class="flex flex-wrap items-center justify-between gap-3"><p id="assignment-program-status" class="text-xs text-slate-500">No hay programación guardada para este turno.</p><button onclick="saveMachineProgram()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar programación</button></div>
+        <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2">
+          <div><h3 class="font-black text-sm">Asignación manual de máquina</h3><p class="text-xs text-slate-500">Asigna una máquina programada a un operario específico. Si el artículo requiere dos personas, el segundo operario podrá seleccionarse por código o aleatoriamente.</p></div>
+          <button type="button" onclick="assignMachineManually()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl"><i class="fa-solid fa-hand-pointer mr-2"></i>Asignar máquina manualmente</button>
+        </div>
       </section>
 
       <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
         <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center"><i class="fa-solid fa-id-card text-xl"></i></div><div><h2 class="font-black">Pantalla del operario</h2><p class="text-xs text-slate-500">Ingresa tu código para recibir aleatoriamente las máquinas programadas.</p></div></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs font-semibold">Fecha de asignación<input id="operator-assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></label><label class="text-xs font-semibold">Turno<select id="operator-assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option>Turno 1 (06:00 - 13:00)</option><option>Turno 2 y 4 (13:00 - 21:30)</option><option>Turno 3 y 5 (20:00 - 06:00)</option></select></label></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs font-semibold">Fecha de asignación<input id="operator-assign-date" type="date" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"></label><label class="text-xs font-semibold">Turno<select id="operator-assign-shift" class="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option value="Turno 1">Turno 1</option><option value="Turno 2">Turno 2</option><option value="Turno 3">Turno 3</option><option value="Turno 4">Turno 4</option><option value="Turno 5">Turno 5</option></select></label></div>
         <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end"><label class="text-xs font-semibold">Código del operario<input id="assignment-operator-code" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 213" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-600 p-3 bg-white dark:bg-slate-900 text-lg font-bold tracking-wider" onkeydown="if(event.key==='Enter') assignMachinesToOperator()"></label><button onclick="assignMachinesToOperator()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl"><i class="fa-solid fa-dice mr-2"></i>Asignar mis máquinas</button></div>
         <div id="assignment-result" class="hidden rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-4"></div>
       </section>
@@ -2256,9 +2260,13 @@
 
     // --- ASIGNACIÓN ALEATORIA DE MÁQUINAS ---
     function assignmentToday(){ return new Date().toLocaleDateString('en-CA'); }
-    function assignmentShiftKey(date, shift){ return `${date}__${shift}`; }
+    function normalizeAssignmentShift(shift){
+      const match=String(shift||'').match(/turno\s*([1-5])/i);
+      return match ? `Turno ${match[1]}` : String(shift||'').trim();
+    }
+    function assignmentShiftKey(date, shift){ return `${date}__${normalizeAssignmentShift(shift)}`; }
     function pairedAssignmentShift(shift){
-      const value=String(shift||'').trim();
+      const value=normalizeAssignmentShift(shift);
       if(value==='Turno 2') return 'Turno 4';
       if(value==='Turno 4') return 'Turno 2';
       if(value==='Turno 3') return 'Turno 5';
@@ -2277,6 +2285,32 @@
       if(base <= 500) return 'pequeña';
       if(base >= 650) return 'grande';
       return 'sin-clasificar';
+    }
+    function normalizeAssignmentText(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
+    function machineNeedsTwoOperators(machineId, articleOverride){
+      const live=currentPlantState[machineId]||{};
+      const code=String(live.codArticulo||'').trim();
+      const master=code?PRODUCTION_ROTATION_MAP.get(normalizeArticleCode(code)):null;
+      const description=normalizeAssignmentText([articleOverride,live.referencia,master?.name].filter(Boolean).join(' '));
+      return description.includes('mesa practica') || description.includes('mesa barichara') || description.includes('columnas del mueble organizador');
+    }
+    function assignmentOperatorsForMachine(record,machineId){
+      const map=record.machineOperators||{};
+      const saved=Array.isArray(map[machineId])?map[machineId]:[];
+      if(saved.length)return saved;
+      return [{code:record.operatorCode||'',name:record.operatorName||''}].filter(x=>x.code||x.name);
+    }
+    function getUsedOperatorCodes(programKey){
+      const used=new Set();
+      assignmentData.records.filter(r=>r.programKey===programKey).forEach(r=>(r.machineIds||[]).forEach(id=>assignmentOperatorsForMachine(r,id).forEach(op=>{if(op.code)used.add(String(op.code).toLowerCase());})));
+      return used;
+    }
+    function chooseRandomSecondaryOperator(programKey, excludedCodes){
+      const used=getUsedOperatorCodes(programKey);
+      (excludedCodes||[]).forEach(c=>used.add(String(c).toLowerCase()));
+      const pool=staffList.map(getStaffCodeAndName).filter(p=>p.code && p.name && !used.has(p.code.toLowerCase()));
+      if(!pool.length)return null;
+      return pool[Math.floor(Math.random()*pool.length)];
     }
     function getStaffCodeAndName(entry){
       const raw = typeof entry === 'string' ? entry : (entry && (entry.name || entry.nombre || ''));
@@ -2448,8 +2482,8 @@
       const key=assignmentShiftKey(date,shift);
       const program=assignmentData.programs[key];
       if(!program){result.innerHTML='<p class="text-rose-700 font-bold">Todavía no hay máquinas programadas para este turno.</p>';return;}
-      const already=assignmentData.records.find(r=>r.programKey===key && r.operatorCode.toLowerCase()===code.toLowerCase());
-      if(already){result.innerHTML=`<p class="font-bold text-amber-700">Ya tienes una asignación registrada para este turno:</p><p class="mt-2 font-black text-lg">${already.machineIds.join(' · ')}</p><p class="text-xs mt-1">Si necesitas un cambio, solicita apoyo al coordinador.</p>`;return;}
+      const already=assignmentData.records.find(r=>r.programKey===key && ((r.operatorCode||'').toLowerCase()===code.toLowerCase() || (r.machineIds||[]).some(id=>assignmentOperatorsForMachine(r,id).some(op=>String(op.code||'').toLowerCase()===code.toLowerCase()))));
+      if(already){result.innerHTML=`<p class="font-bold text-amber-700">Ya tienes una participación registrada para este turno:</p><p class="mt-2 font-black text-lg">${already.machineIds.join(' · ')}</p><p class="text-xs mt-1">Si necesitas un cambio, solicita apoyo al coordinador.</p>`;return;}
       const used=new Set(assignmentData.records.filter(r=>r.programKey===key).flatMap(r=>r.machineIds));
       const available=program.machineIds.filter(id=>!used.has(id));
       if(!available.length){result.innerHTML='<p class="text-rose-700 font-bold">Ya no quedan máquinas disponibles en esta programación.</p>';return;}
@@ -2483,11 +2517,66 @@
           unidadEmpaque:labelData.pack ?? null
         };
       });
-      const record={id:`${Date.now()}_${code}`,programKey:key,date,shift,operatorCode:staff.code,operatorName:staff.name,machineIds:chosen,machineArticles,group:groupLabel,primaryGroup:machineAssignmentGroup(chosen[0]),coordinator:program.coordinator,createdAt:new Date().toISOString()};
+      const machineOperators={};
+      const secondariesChosen=[];
+      for(const machineId of chosen){
+        const primary={code:staff.code,name:staff.name};
+        machineOperators[machineId]=[primary];
+        if(machineNeedsTwoOperators(machineId,machineArticles[machineId]?.referencia)){
+          const secondary=chooseRandomSecondaryOperator(key,[staff.code,...secondariesChosen]);
+          if(!secondary){result.innerHTML=`<p class="text-rose-700 font-bold">La máquina ${escapeQuick(machineId)} requiere dos operarios, pero no hay otro operario disponible para asignarlo.</p>`;return;}
+          // Reservar el segundo operario para evitar repetirlo en otra máquina del mismo turno.
+          machineOperators[machineId].push({code:secondary.code,name:secondary.name});
+          secondariesChosen.push(secondary.code);
+        }
+      }
+      const record={id:`${Date.now()}_${code}`,programKey:key,date,shift,operatorCode:staff.code,operatorName:staff.name,machineIds:chosen,machineArticles,machineOperators,group:groupLabel,primaryGroup:machineAssignmentGroup(chosen[0]),coordinator:program.coordinator,createdAt:new Date().toISOString()};
       assignmentData.records.push(record); persistAssignmentData(); renderAssignmentHistory();
       const machineMessages=program.machineMessages || {};
-      result.innerHTML=`<div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Asignación realizada</div><p class="mt-2 text-sm font-semibold">${escapeQuick(staff.name)} · Código ${escapeQuick(staff.code)}</p><div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">${chosen.map(id=>{const message=String(machineMessages[id] ?? program.message ?? '').trim();const art=machineArticles[id] || {};return `<div class="rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 p-3 text-center"><div class="text-[10px] text-slate-500">${machineAssignmentGroup(id)==='pequeña'?'MÁQUINA PEQUEÑA':'MÁQUINA GRANDE'}</div><div class="text-xl font-black">${escapeQuick(id)}</div><div class="mt-2 text-xs text-left"><div><b>Artículo:</b> ${escapeQuick(art.codArticulo || 'No registrado')}</div><div class="text-slate-600 dark:text-slate-300">${escapeQuick(art.referencia || 'Sin referencia registrada')}</div></div>${renderProductionLabelInfo({status:art.labelStatus || 'no-encontrado',perShift:art.personalTurno,perHour:art.personalHora,cycle:art.cicloBase,cavities:art.cavidades,pack:art.unidadEmpaque})}${message?`<div class="mt-2 text-left rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-2"><div class="text-[10px] font-black uppercase tracking-wide text-amber-800 dark:text-amber-300"><i class="fa-solid fa-message mr-1"></i>Mensaje del coordinador</div><p class="mt-1 text-xs text-slate-800 dark:text-slate-100 whitespace-pre-wrap">${escapeQuick(message)}</p></div>`:''}</div>`;}).join('')}</div><p class="text-xs mt-3 text-slate-600 dark:text-slate-300">Turno: ${escapeQuick(shift)} · Fecha: ${escapeQuick(date)}</p>`;
+      result.innerHTML=`<div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Asignación realizada</div><p class="mt-2 text-sm font-semibold">${escapeQuick(staff.name)} · Código ${escapeQuick(staff.code)}</p><div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">${chosen.map(id=>{const message=String(machineMessages[id] ?? program.message ?? '').trim();const art=machineArticles[id] || {};return `<div class="rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 p-3 text-center"><div class="text-[10px] text-slate-500">${machineAssignmentGroup(id)==='pequeña'?'MÁQUINA PEQUEÑA':'MÁQUINA GRANDE'}</div><div class="text-xl font-black">${escapeQuick(id)}</div><div class="mt-1 text-xs text-emerald-700 dark:text-emerald-300">${(machineOperators[id]||[]).map(op=>escapeQuick(op.name)+' ('+escapeQuick(op.code)+')').join(' + ')}</div><div class="mt-2 text-xs text-left"><div><b>Artículo:</b> ${escapeQuick(art.codArticulo || 'No registrado')}</div><div class="text-slate-600 dark:text-slate-300">${escapeQuick(art.referencia || 'Sin referencia registrada')}</div></div>${renderProductionLabelInfo({status:art.labelStatus || 'no-encontrado',perShift:art.personalTurno,perHour:art.personalHora,cycle:art.cicloBase,cavities:art.cavidades,pack:art.unidadEmpaque})}${message?`<div class="mt-2 text-left rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-2"><div class="text-[10px] font-black uppercase tracking-wide text-amber-800 dark:text-amber-300"><i class="fa-solid fa-message mr-1"></i>Mensaje del coordinador</div><p class="mt-1 text-xs text-slate-800 dark:text-slate-100 whitespace-pre-wrap">${escapeQuick(message)}</p></div>`:''}</div>`;}).join('')}</div><p class="text-xs mt-3 text-slate-600 dark:text-slate-300">Turno: ${escapeQuick(shift)} · Fecha: ${escapeQuick(date)}</p>`;
       document.getElementById('assignment-operator-code').value='';
+    }
+    function assignMachineManually(){
+      if(!isAdminUser()){showToast('Solo el administrador puede realizar asignaciones manuales.','error');return;}
+      const date=document.getElementById('assign-date')?.value||assignmentToday();
+      const shift=document.getElementById('assign-shift')?.value||'Turno 1';
+      const key=assignmentShiftKey(date,shift);
+      const program=assignmentData.programs[key];
+      if(!program){showToast('Primero guarda la programación de máquinas para esta fecha y turno.','error');return;}
+      const used=new Set(assignmentData.records.filter(r=>r.programKey===key).flatMap(r=>r.machineIds||[]));
+      const available=(program.machineIds||[]).filter(id=>!used.has(id));
+      if(!available.length){showToast('No hay máquinas programadas disponibles para asignar.','error');return;}
+      const machineId=String(prompt(`Máquinas disponibles: ${available.join(', ')}\n\nEscribe el número de la máquina que deseas asignar:`)||'').trim();
+      if(!machineId)return;
+      if(!available.includes(machineId)){showToast('La máquina no está disponible en esta programación o ya fue asignada.','error');return;}
+      const primaryCode=String(prompt(`Máquina ${machineId}. Ingresa el CÓDIGO del operario principal:`)||'').trim();
+      if(!primaryCode)return;
+      const primary=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===primaryCode.toLowerCase());
+      if(!primary){showToast('No se encontró el código del operario principal.','error');return;}
+      const usedCodes=getUsedOperatorCodes(key);
+      if(usedCodes.has(primary.code.toLowerCase())){showToast('Ese operario ya tiene una asignación o apoyo en este turno.','error');return;}
+      const live=currentPlantState[machineId]||{};
+      const labelData=getProductionLabelData(machineId);
+      const article={codArticulo:String(live.codArticulo||'').trim(),referencia:String(live.referencia||labelData.reference||'').trim(),codMolde:String(live.codMolde||'').trim(),labelStatus:labelData.status,personalTurno:labelData.perShift??null,personalHora:labelData.perHour??null,cicloBase:labelData.cycle??null,cavidades:labelData.cavities??null,unidadEmpaque:labelData.pack??null};
+      const operators=[{code:primary.code,name:primary.name}];
+      if(machineNeedsTwoOperators(machineId,article.referencia)){
+        const entered=prompt(`El artículo de la máquina ${machineId} requiere DOS operarios.\n\nIngresa el código del segundo operario.\nDeja vacío para asignarlo aleatoriamente:`);
+        if(entered===null)return;
+        let secondary;
+        if(String(entered).trim()){
+          const code=String(entered).trim();
+          secondary=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===code.toLowerCase());
+          if(!secondary){showToast('No se encontró el código del segundo operario.','error');return;}
+          if(secondary.code.toLowerCase()===primary.code.toLowerCase()||usedCodes.has(secondary.code.toLowerCase())){showToast('El segundo operario debe ser diferente y no tener otra asignación en este turno.','error');return;}
+        }else{
+          secondary=chooseRandomSecondaryOperator(key,[primary.code]);
+          if(!secondary){showToast('No hay otro operario disponible para completar esta máquina.','error');return;}
+        }
+        operators.push({code:secondary.code,name:secondary.name});
+      }
+      const record={id:`${Date.now()}_manual_${primary.code}`,programKey:key,date,shift,operatorCode:primary.code,operatorName:primary.name,machineIds:[machineId],machineArticles:{[machineId]:article},machineOperators:{[machineId]:operators},group:machineAssignmentGroup(machineId),primaryGroup:machineAssignmentGroup(machineId),coordinator:program.coordinator,createdAt:new Date().toISOString(),assignmentMethod:'manual'};
+      assignmentData.records.push(record);persistAssignmentData();renderAssignmentHistory();
+      showToast(`Máquina ${machineId} asignada manualmente a ${operators.map(o=>o.name).join(' y ')}.`);
     }
     function changeMachineOperator(recordId,machineId){
       if(!isAdminUser()){showToast('Solo el administrador puede cambiar el operario asignado.','error');return;}
@@ -2508,23 +2597,27 @@
       }
       const previousOperator={code:source.operatorCode,name:source.operatorName};
       const machineArticle=(source.machineArticles||{})[machineId];
+      const existingMachineOperators=assignmentOperatorsForMachine(source,machineId);
       const changedAt=new Date().toISOString();
       if(destination){
         destination.machineIds=Array.isArray(destination.machineIds)?destination.machineIds:[];
         destination.machineIds.push(machineId);
         destination.machineArticles=destination.machineArticles||{};
         if(machineArticle)destination.machineArticles[machineId]=machineArticle;
+        destination.machineOperators=destination.machineOperators||{};
+        destination.machineOperators[machineId]=[{code:staff.code,name:staff.name},...existingMachineOperators.filter(op=>String(op.code).toLowerCase()!==String(previousOperator.code).toLowerCase())];
         const groups=[...new Set(destination.machineIds.map(machineAssignmentGroup))];
         destination.group=groups.length>1?'mixta':groups[0];
         destination.primaryGroup=machineAssignmentGroup(destination.machineIds[0]);
         destination.reassignmentHistory=destination.reassignmentHistory||[];
         destination.reassignmentHistory.push({machineId,from:previousOperator,to:{code:staff.code,name:staff.name},changedAt});
       }else{
-        const newRecord={...source,id:`${Date.now()}_${staff.code}_${String(machineId).replace(/[^a-z0-9]/gi,'')}`,operatorCode:staff.code,operatorName:staff.name,machineIds:[machineId],machineArticles:machineArticle?{[machineId]:machineArticle}:{},group:machineAssignmentGroup(machineId),primaryGroup:machineAssignmentGroup(machineId),createdAt:changedAt,originalAssignedAt:source.createdAt||null,reassignmentHistory:[{machineId,from:previousOperator,to:{code:staff.code,name:staff.name},changedAt}]};
+        const newRecord={...source,id:`${Date.now()}_${staff.code}_${String(machineId).replace(/[^a-z0-9]/gi,'')}`,operatorCode:staff.code,operatorName:staff.name,machineIds:[machineId],machineArticles:machineArticle?{[machineId]:machineArticle}:{},machineOperators:{[machineId]:[{code:staff.code,name:staff.name},...existingMachineOperators.filter(op=>String(op.code).toLowerCase()!==String(previousOperator.code).toLowerCase())]},group:machineAssignmentGroup(machineId),primaryGroup:machineAssignmentGroup(machineId),createdAt:changedAt,originalAssignedAt:source.createdAt||null,reassignmentHistory:[{machineId,from:previousOperator,to:{code:staff.code,name:staff.name},changedAt}]};
         assignmentData.records.push(newRecord);
       }
       source.machineIds=source.machineIds.filter(id=>id!==machineId);
       if(source.machineArticles)delete source.machineArticles[machineId];
+      if(source.machineOperators)delete source.machineOperators[machineId];
       if(source.machineIds.length){
         const groups=[...new Set(source.machineIds.map(machineAssignmentGroup))];
         source.group=groups.length>1?'mixta':groups[0];
@@ -2537,6 +2630,35 @@
       persistAssignmentData();
       renderAssignmentHistory();
       showToast(`Máquina ${machineId} reasignada a ${staff.name}.`);
+    }
+    function changeSecondMachineOperator(recordId,machineId){
+      if(!isAdminUser()){showToast('Solo el administrador puede cambiar el segundo operario.','error');return;}
+      const record=assignmentData.records.find(r=>String(r.id)===String(recordId));
+      if(!record || !(record.machineIds||[]).includes(machineId)){showToast('No se encontró la máquina.','error');return;}
+      const ops=assignmentOperatorsForMachine(record,machineId);
+      if(ops.length<2){showToast('Esta máquina no tiene un segundo operario registrado.','error');return;}
+      const current=ops[1];
+      const mode=prompt(`Segundo operario de la máquina ${machineId}.\nActual: ${current.name} (${current.code}).\n\nEscribe el nuevo código o deja vacío para asignarlo aleatoriamente:`);
+      if(mode===null)return;
+      let replacement;
+      if(String(mode).trim()){
+        const code=String(mode).trim();
+        replacement=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===code.toLowerCase());
+        if(!replacement){showToast('Código de operario no encontrado.','error');return;}
+        if(ops.some(op=>String(op.code).toLowerCase()===replacement.code.toLowerCase())){showToast('El segundo operario debe ser diferente al primero.','error');return;}
+        const used=getUsedOperatorCodes(record.programKey);used.delete(String(current.code).toLowerCase());
+        if(used.has(replacement.code.toLowerCase())){showToast('Ese operario ya participa en otra asignación de este turno.','error');return;}
+      }else{
+        const used=getUsedOperatorCodes(record.programKey);used.delete(String(current.code).toLowerCase());
+        const pool=staffList.map(getStaffCodeAndName).filter(p=>p.code && p.name && !used.has(p.code.toLowerCase()) && !ops.some(op=>String(op.code).toLowerCase()===p.code.toLowerCase()));
+        if(!pool.length){showToast('No hay otro operario disponible para asignar aleatoriamente.','error');return;}
+        replacement=pool[Math.floor(Math.random()*pool.length)];
+      }
+      record.machineOperators=record.machineOperators||{};
+      record.machineOperators[machineId]=[ops[0],{code:replacement.code,name:replacement.name}];
+      record.reassignmentHistory=record.reassignmentHistory||[];
+      record.reassignmentHistory.push({machineId,role:'segundo operario',from:current,to:{code:replacement.code,name:replacement.name},changedAt:new Date().toISOString()});
+      persistAssignmentData();renderAssignmentHistory();showToast(`Segundo operario actualizado: ${replacement.name}.`);
     }
     function deleteAssignmentRecord(recordId){
       if(!isAdminUser()){showToast('Solo el administrador puede borrar registros de asignación.','error');return;}
@@ -2571,10 +2693,14 @@
           const detail=art.codArticulo || art.referencia
             ? `<b>${escapeQuick(id)}:</b> ${escapeQuick(art.codArticulo || 'Sin código')}<br><span class="text-slate-500">${escapeQuick(art.referencia || 'Sin referencia')}</span><br><span class="text-sky-700 dark:text-sky-300">Rótulo: ${art.personalTurno!=null?Number(art.personalTurno).toFixed(2)+' / turno':'No calculable'} · ${art.personalHora!=null?Number(art.personalHora).toFixed(2)+' / hora':'No calculable'}</span>`
             : `<b>${escapeQuick(id)}:</b> <span class="text-slate-400">No registrado en este registro antiguo</span>`;
-          const changeButton=canDelete?` <button onclick="changeMachineOperator('${escapeQuick(r.id)}','${escapeQuick(id)}')" class="mt-1 rounded-md bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold px-2 py-1 whitespace-nowrap" title="Cambiar operario de esta máquina"><i class="fa-solid fa-user-pen mr-1"></i>Cambiar operario</button>`:'';
-          return `<div class="mb-2 border-b border-slate-100 dark:border-slate-700 pb-2">${detail}${changeButton}</div>`;
+          const ops=assignmentOperatorsForMachine(r,id);
+          const operatorsLine=ops.length>1?`<div class="mt-1 text-emerald-700 dark:text-emerald-300"><b>Operarios:</b> ${ops.map(op=>`${escapeQuick(op.name)} (${escapeQuick(op.code)})`).join(' + ')}</div>`:'';
+          const changeButton=canDelete?` <button onclick="changeMachineOperator('${escapeQuick(r.id)}','${escapeQuick(id)}')" class="mt-1 rounded-md bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold px-2 py-1 whitespace-nowrap" title="Cambiar operario principal"><i class="fa-solid fa-user-pen mr-1"></i>Cambiar operario</button>${ops.length>1?` <button onclick="changeSecondMachineOperator('${escapeQuick(r.id)}','${escapeQuick(id)}')" class="mt-1 rounded-md bg-violet-100 hover:bg-violet-200 text-violet-800 font-bold px-2 py-1 whitespace-nowrap"><i class="fa-solid fa-users-gear mr-1"></i>Cambiar segundo</button>`:''}`:'';
+          return `<div class="mb-2 border-b border-slate-100 dark:border-slate-700 pb-2">${detail}${operatorsLine}${changeButton}</div>`;
         }).join('');
-        return `<tr class="border-b border-slate-100 dark:border-slate-700 align-top"><td class="p-2 whitespace-nowrap">${escapeQuick(r.date)}<br><span class="text-slate-500">${escapeQuick(r.shift)}</span></td><td class="p-2 font-semibold">${escapeQuick(r.operatorName)}<br><span class="text-slate-500">Código ${escapeQuick(r.operatorCode)}</span></td><td class="p-2 font-black">${(r.machineIds || []).map(escapeQuick).join(' · ')}</td><td class="p-2 min-w-48">${articleLines}</td><td class="p-2">${escapeQuick(r.group)}</td><td class="p-2">${escapeQuick(r.coordinator)}</td><td class="p-2">${canDelete?`<button onclick="deleteAssignmentRecord('${escapeQuick(r.id)}')" class="rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-2 whitespace-nowrap" title="Borrar registro"><i class="fa-solid fa-trash mr-1"></i>Borrar</button>`:'<span class="text-slate-400">—</span>'}</td></tr>`;
+        const allOps=[...new Map((r.machineIds||[]).flatMap(id=>assignmentOperatorsForMachine(r,id)).map(op=>[String(op.code||op.name),op])).values()];
+        const operatorDisplay=allOps.length>1?allOps.map(op=>`${escapeQuick(op.name)} (${escapeQuick(op.code)})`).join('<br>'): `${escapeQuick(r.operatorName)}<br><span class="text-slate-500">Código ${escapeQuick(r.operatorCode)}</span>`;
+        return `<tr class="border-b border-slate-100 dark:border-slate-700 align-top"><td class="p-2 whitespace-nowrap">${escapeQuick(r.date)}<br><span class="text-slate-500">${escapeQuick(r.shift)}</span></td><td class="p-2 font-semibold">${operatorDisplay}</td><td class="p-2 font-black">${(r.machineIds || []).map(escapeQuick).join(' · ')}</td><td class="p-2 min-w-48">${articleLines}</td><td class="p-2">${escapeQuick(r.group)}</td><td class="p-2">${escapeQuick(r.coordinator)}</td><td class="p-2">${canDelete?`<button onclick="deleteAssignmentRecord('${escapeQuick(r.id)}')" class="rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-2 whitespace-nowrap" title="Borrar registro"><i class="fa-solid fa-trash mr-1"></i>Borrar</button>`:'<span class="text-slate-400">—</span>'}</td></tr>`;
       }).join(''):'<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay asignaciones para los filtros seleccionados.</td></tr>';
     }
     function clearAssignmentFilters(){
@@ -2596,6 +2722,8 @@
             'Turno':r.shift || '',
             'Operario':r.operatorName || '',
             'Código operario':r.operatorCode || '',
+            'Segundo operario':(assignmentOperatorsForMachine(r,machineId)[1]?.name)||'',
+            'Código segundo operario':(assignmentOperatorsForMachine(r,machineId)[1]?.code)||'',
             'Máquina asignada':machineId,
             'Grupo de máquina':machineAssignmentGroup(machineId),
             'Código artículo':art.codArticulo || '',
