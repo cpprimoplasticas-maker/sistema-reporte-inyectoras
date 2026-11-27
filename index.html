@@ -421,6 +421,8 @@
           <select id="assign-max-machines" class="mt-1 w-full sm:w-48 rounded-lg border border-slate-300 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-900"><option value="1">1 máquina</option><option value="2">2 máquinas</option><option value="3">3 máquinas</option><option value="4">4 máquinas</option><option value="5">5 máquinas</option></select>
         </label>
         <div class="flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-sm">Máquinas programadas</h3><p class="text-xs text-slate-500">Pequeñas: hasta 500-2. Grandes: desde 650. Los números entre 501 y 649 quedan fuera de la clasificación.</p><p class="text-xs text-slate-500 mt-1">Puedes escribir un mensaje opcional e independiente para cada máquina.</p></div><div class="flex gap-2"><button onclick="toggleAssignmentMachines(true)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Seleccionar todas</button><button onclick="toggleAssignmentMachines(false)" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Limpiar</button></div></div>
+        <div id="handover-shift-summary" class="hidden rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/25 p-3 space-y-2"></div>
+        <div id="paired-shift-summary" class="hidden rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/25 p-3 space-y-2"></div>
         <div id="assignment-machine-picker" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 max-h-72 overflow-y-auto p-2 rounded-xl border border-slate-200 dark:border-slate-700"></div>
         <div class="flex flex-wrap items-center justify-between gap-3"><p id="assignment-program-status" class="text-xs text-slate-500">No hay programación guardada para este turno.</p><button onclick="saveMachineProgram()" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Guardar programación</button></div>
         <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2">
@@ -2279,6 +2281,28 @@
       const program=assignmentData.programs[assignmentShiftKey(date,paired)];
       return {shift:paired,machines:new Set(program?.machineIds || [])};
     }
+    function handoverReferenceShift(shift){
+      const map={'Turno 1':'Turno 5','Turno 2':'Turno 1','Turno 3':'Turno 2','Turno 4':'Turno 2','Turno 5':'Turno 3'};
+      return map[normalizeAssignmentShift(shift)] || '';
+    }
+    function renderHandoverShiftSummary(date, shift){
+      const panel=document.getElementById('handover-shift-summary');
+      if(!panel) return;
+      const sourceShift=handoverReferenceShift(shift);
+      if(!sourceShift){panel.classList.add('hidden');panel.innerHTML='';return;}
+      const sourceKey=assignmentShiftKey(date,sourceShift);
+      const sourceProgram=assignmentData.programs[sourceKey];
+      const records=assignmentData.records.filter(r=>r.programKey===sourceKey);
+      const machineIds=sortMachinesDescending([...new Set([...(sourceProgram?.machineIds||[]),...records.flatMap(r=>r.machineIds||[])])]);
+      const rows=machineIds.map(id=>{
+        const record=records.find(r=>(r.machineIds||[]).includes(id));
+        const operators=record?assignmentOperatorsForMachine(record,id):[];
+        const people=operators.length?operators.map(op=>`${escapeQuick(op.name||'Operario')} · ${escapeQuick(op.code||'Sin código')}`).join('<br>'):'<span class="text-slate-500">Sin operario asignado todavía</span>';
+        return `<div class="rounded-lg border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 px-3 py-2"><div class="flex items-center justify-between gap-2"><span class="font-black text-sm">Máquina ${escapeQuick(id)}</span><span class="text-[10px] font-bold text-sky-700 dark:text-sky-300">${operators.length} operario(s)</span></div><div class="mt-1 text-xs">${people}</div></div>`;
+      }).join('');
+      panel.classList.remove('hidden');
+      panel.innerHTML=`<div class="flex flex-wrap items-center justify-between gap-2"><div class="text-xs font-black uppercase tracking-wide text-sky-800 dark:text-sky-300"><i class="fa-solid fa-people-arrows-left-right mr-1"></i>Relevo: ${escapeQuick(sourceShift)} → ${escapeQuick(normalizeAssignmentShift(shift))}</div><span class="rounded-full bg-sky-200 dark:bg-sky-900 px-2 py-1 text-[11px] font-black text-sky-900 dark:text-sky-100">${machineIds.length} máquina(s)</span></div><p class="text-xs text-sky-900 dark:text-sky-200">Personal y máquinas registrados en ${escapeQuick(sourceShift)} para el ${escapeQuick(date)}.</p>${rows?`<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">${rows}</div>`:'<p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Todavía no hay máquinas programadas ni asignaciones registradas en este turno.</p>'}`;
+    }
     function machineAssignmentGroup(machineId){
       const base = parseInt(String(machineId).match(/^\d+/)?.[0] || '', 10);
       if(!Number.isFinite(base)) return 'sin-clasificar';
@@ -2416,6 +2440,18 @@
         const selectedDate=date?.value || assignmentToday();
         const selectedShift=document.getElementById('assign-shift')?.value || 'Turno 1';
         const reserved=getMachinesReservedByPairedShift(selectedDate,selectedShift);
+        renderHandoverShiftSummary(selectedDate,selectedShift);
+        const pairedSummary=document.getElementById('paired-shift-summary');
+        if(pairedSummary){
+          if(reserved.shift){
+            const reservedIds=sortMachinesDescending([...reserved.machines]);
+            pairedSummary.classList.remove('hidden');
+            pairedSummary.innerHTML=`<div class="flex items-center justify-between gap-2"><div class="text-xs font-black uppercase tracking-wide text-amber-800 dark:text-amber-300"><i class="fa-solid fa-link mr-1"></i>Referencia para programar ${escapeQuick(selectedShift)}</div><span class="rounded-full bg-amber-200 dark:bg-amber-900 px-2 py-1 text-[11px] font-black text-amber-900 dark:text-amber-100">${reservedIds.length} máquina(s)</span></div><p class="text-xs text-amber-900 dark:text-amber-200">Estas máquinas ya están programadas en <b>${escapeQuick(reserved.shift)}</b> para el ${escapeQuick(selectedDate)}. No debes volver a seleccionarlas.</p>${reservedIds.length?`<div class="flex flex-wrap gap-1.5">${reservedIds.map(id=>`<span class="inline-flex items-center rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-black text-slate-800 dark:text-slate-100"><i class="fa-solid fa-lock mr-1.5 text-amber-600"></i>${escapeQuick(id)}</span>`).join('')}</div>`:'<p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">No hay máquinas programadas en este turno relacionado.</p>'}`;
+          }else{
+            pairedSummary.classList.add('hidden');
+            pairedSummary.innerHTML='';
+          }
+        }
         const machineMessages=program?.machineMessages || {};
         picker.innerHTML=sortMachinesDescending(machinesList).map(m=>{
           const checked=program ? program.machineIds.includes(m.id) : false;
