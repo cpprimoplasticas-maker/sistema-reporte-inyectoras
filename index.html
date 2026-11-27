@@ -2470,6 +2470,16 @@
       persistAssignmentData(); renderAssignmentModule();
       showToast('Programación de máquinas guardada.');
     }
+    function findMachineAssignmentRecord(programKey,machineId){
+      return assignmentData.records.find(r=>r.programKey===programKey && (r.machineIds||[]).includes(machineId)) || null;
+    }
+    function machineOperatorCapacity(machineId,article){return machineNeedsTwoOperators(machineId,article?.referencia)?2:1;}
+    function machineAssignmentSlotsOpen(programKey,machineId){
+      const record=findMachineAssignmentRecord(programKey,machineId);
+      if(!record)return machineOperatorCapacity(machineId,null);
+      const article=(record.machineArticles||{})[machineId]||{};
+      return Math.max(0,machineOperatorCapacity(machineId,article)-assignmentOperatorsForMachine(record,machineId).length);
+    }
     function assignMachinesToOperator(){
       const code=document.getElementById('assignment-operator-code').value.trim();
       const result=document.getElementById('assignment-result');
@@ -2482,12 +2492,11 @@
       const key=assignmentShiftKey(date,shift);
       const program=assignmentData.programs[key];
       if(!program){result.innerHTML='<p class="text-rose-700 font-bold">Todavía no hay máquinas programadas para este turno.</p>';return;}
-      const already=assignmentData.records.find(r=>r.programKey===key && ((r.operatorCode||'').toLowerCase()===code.toLowerCase() || (r.machineIds||[]).some(id=>assignmentOperatorsForMachine(r,id).some(op=>String(op.code||'').toLowerCase()===code.toLowerCase()))));
-      if(already){result.innerHTML=`<p class="font-bold text-amber-700">Ya tienes una participación registrada para este turno:</p><p class="mt-2 font-black text-lg">${already.machineIds.join(' · ')}</p><p class="text-xs mt-1">Si necesitas un cambio, solicita apoyo al coordinador.</p>`;return;}
-      const used=new Set(assignmentData.records.filter(r=>r.programKey===key).flatMap(r=>r.machineIds));
-      const available=program.machineIds.filter(id=>!used.has(id));
-      if(!available.length){result.innerHTML='<p class="text-rose-700 font-bold">Ya no quedan máquinas disponibles en esta programación.</p>';return;}
-      const previous=[...assignmentData.records].filter(r=>r.operatorCode.toLowerCase()===code.toLowerCase()).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+      const already=assignmentData.records.find(r=>r.programKey===key && (r.machineIds||[]).some(id=>assignmentOperatorsForMachine(r,id).some(op=>String(op.code||'').toLowerCase()===code.toLowerCase())));
+      if(already){const assigned=(already.machineIds||[]).filter(id=>assignmentOperatorsForMachine(already,id).some(op=>String(op.code||'').toLowerCase()===code.toLowerCase()));result.innerHTML=`<p class="font-bold text-amber-700">Ya tienes una participación registrada para este turno:</p><p class="mt-2 font-black text-lg">${assigned.join(' · ')}</p><p class="text-xs mt-1">Si necesitas un cambio, solicita apoyo al coordinador.</p>`;return;}
+      const available=(program.machineIds||[]).filter(id=>machineAssignmentSlotsOpen(key,id)>0);
+      if(!available.length){result.innerHTML='<p class="text-rose-700 font-bold">Ya no quedan cupos de máquinas disponibles en esta programación.</p>';return;}
+      const previous=[...assignmentData.records].filter(r=>r.programKey!==key && (r.machineIds||[]).some(id=>assignmentOperatorsForMachine(r,id).some(op=>String(op.code||'').toLowerCase()===code.toLowerCase()))).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
       const previousPrimary=previous && (previous.primaryGroup || (previous.group==='mixta' ? null : previous.group));
       const preferred=!previousPrimary?'pequeña':(previous.date===date?previousPrimary:(previousPrimary==='pequeña'?'grande':'pequeña'));
       const small=available.filter(id=>machineAssignmentGroup(id)==='pequeña');
@@ -2496,87 +2505,88 @@
       let fallbackPool=preferred==='pequeña'?large:small;
       if(!firstPool.length){firstPool=fallbackPool;fallbackPool=[];}
       const shuffled=arr=>arr.map(v=>({v,k:Math.random()})).sort((a,b)=>a.k-b.k).map(x=>x.v);
-      const chosen=shuffled(firstPool).slice(0,program.maxMachines);
-      if(chosen.length<program.maxMachines) chosen.push(...shuffled(fallbackPool).slice(0,program.maxMachines-chosen.length));
-      if(!chosen.length){result.innerHTML='<p class="text-rose-700 font-bold">No hay máquinas disponibles para asignar.</p>';return;}
-      const groups=[...new Set(chosen.map(machineAssignmentGroup))];
-      const groupLabel=groups.length>1?'mixta':groups[0];
-      const machineArticles={};
-      chosen.forEach(machineId=>{
-        const live=currentPlantState[machineId] || {};
-        const labelData=getProductionLabelData(machineId);
-        machineArticles[machineId]={
-          codArticulo:String(live.codArticulo || '').trim(),
-          referencia:String(live.referencia || '').trim(),
-          codMolde:String(live.codMolde || '').trim(),
-          labelStatus:labelData.status,
-          personalTurno:labelData.perShift ?? null,
-          personalHora:labelData.perHour ?? null,
-          cicloBase:labelData.cycle ?? null,
-          cavidades:labelData.cavities ?? null,
-          unidadEmpaque:labelData.pack ?? null
-        };
-      });
-      const machineOperators={};
-      const secondariesChosen=[];
+      const max=Math.max(1,Number(program.maxMachines)||1);
+      const chosen=shuffled(firstPool).slice(0,max);
+      if(chosen.length<max) chosen.push(...shuffled(fallbackPool).slice(0,max-chosen.length));
+      if(!chosen.length){result.innerHTML='<p class="text-rose-700 font-bold">No hay cupos disponibles para asignar.</p>';return;}
+      const newMachineIds=[]; const joined=[]; const primary={code:staff.code,name:staff.name};
       for(const machineId of chosen){
-        const primary={code:staff.code,name:staff.name};
-        machineOperators[machineId]=[primary];
-        if(machineNeedsTwoOperators(machineId,machineArticles[machineId]?.referencia)){
-          const secondary=chooseRandomSecondaryOperator(key,[staff.code,...secondariesChosen]);
-          if(!secondary){result.innerHTML=`<p class="text-rose-700 font-bold">La máquina ${escapeQuick(machineId)} requiere dos operarios, pero no hay otro operario disponible para asignarlo.</p>`;return;}
-          // Reservar el segundo operario para evitar repetirlo en otra máquina del mismo turno.
-          machineOperators[machineId].push({code:secondary.code,name:secondary.name});
-          secondariesChosen.push(secondary.code);
+        let record=findMachineAssignmentRecord(key,machineId);
+        if(record){
+          const ops=assignmentOperatorsForMachine(record,machineId);
+          if(ops.some(op=>String(op.code||'').toLowerCase()===primary.code.toLowerCase()))continue;
+          if(ops.length>=machineOperatorCapacity(machineId,(record.machineArticles||{})[machineId]))continue;
+          record.machineOperators=record.machineOperators||{};
+          record.machineOperators[machineId]=[...ops,primary];
+          record.reassignmentHistory=record.reassignmentHistory||[];
+          record.reassignmentHistory.push({machineId,role:'segundo operario',to:primary,changedAt:new Date().toISOString(),assignmentMethod:'aleatoria'});
+          joined.push(machineId);
+        }else{
+          newMachineIds.push(machineId);
         }
       }
-      const record={id:`${Date.now()}_${code}`,programKey:key,date,shift,operatorCode:staff.code,operatorName:staff.name,machineIds:chosen,machineArticles,machineOperators,group:groupLabel,primaryGroup:machineAssignmentGroup(chosen[0]),coordinator:program.coordinator,createdAt:new Date().toISOString()};
-      assignmentData.records.push(record); persistAssignmentData(); renderAssignmentHistory();
-      const machineMessages=program.machineMessages || {};
-      result.innerHTML=`<div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Asignación realizada</div><p class="mt-2 text-sm font-semibold">${escapeQuick(staff.name)} · Código ${escapeQuick(staff.code)}</p><div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">${chosen.map(id=>{const message=String(machineMessages[id] ?? program.message ?? '').trim();const art=machineArticles[id] || {};return `<div class="rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 p-3 text-center"><div class="text-[10px] text-slate-500">${machineAssignmentGroup(id)==='pequeña'?'MÁQUINA PEQUEÑA':'MÁQUINA GRANDE'}</div><div class="text-xl font-black">${escapeQuick(id)}</div><div class="mt-1 text-xs text-emerald-700 dark:text-emerald-300">${(machineOperators[id]||[]).map(op=>escapeQuick(op.name)+' ('+escapeQuick(op.code)+')').join(' + ')}</div><div class="mt-2 text-xs text-left"><div><b>Artículo:</b> ${escapeQuick(art.codArticulo || 'No registrado')}</div><div class="text-slate-600 dark:text-slate-300">${escapeQuick(art.referencia || 'Sin referencia registrada')}</div></div>${renderProductionLabelInfo({status:art.labelStatus || 'no-encontrado',perShift:art.personalTurno,perHour:art.personalHora,cycle:art.cicloBase,cavities:art.cavidades,pack:art.unidadEmpaque})}${message?`<div class="mt-2 text-left rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-2"><div class="text-[10px] font-black uppercase tracking-wide text-amber-800 dark:text-amber-300"><i class="fa-solid fa-message mr-1"></i>Mensaje del coordinador</div><p class="mt-1 text-xs text-slate-800 dark:text-slate-100 whitespace-pre-wrap">${escapeQuick(message)}</p></div>`:''}</div>`;}).join('')}</div><p class="text-xs mt-3 text-slate-600 dark:text-slate-300">Turno: ${escapeQuick(shift)} · Fecha: ${escapeQuick(date)}</p>`;
+      let newRecord=null;
+      if(newMachineIds.length){
+        const machineArticles={},machineOperators={};
+        newMachineIds.forEach(machineId=>{
+          const live=currentPlantState[machineId]||{}; const labelData=getProductionLabelData(machineId);
+          machineArticles[machineId]={codArticulo:String(live.codArticulo||'').trim(),referencia:String(live.referencia||'').trim(),codMolde:String(live.codMolde||'').trim(),labelStatus:labelData.status,personalTurno:labelData.perShift??null,personalHora:labelData.perHour??null,cicloBase:labelData.cycle??null,cavidades:labelData.cavities??null,unidadEmpaque:labelData.pack??null};
+          machineOperators[machineId]=[{code:staff.code,name:staff.name}];
+        });
+        const groups=[...new Set(newMachineIds.map(machineAssignmentGroup))];
+        newRecord={id:`${Date.now()}_${code}`,programKey:key,date,shift,operatorCode:staff.code,operatorName:staff.name,machineIds:newMachineIds,machineArticles,machineOperators,group:groups.length>1?'mixta':groups[0],primaryGroup:machineAssignmentGroup(newMachineIds[0]),coordinator:program.coordinator,createdAt:new Date().toISOString()};
+        assignmentData.records.push(newRecord);
+      }
+      if(!newMachineIds.length&&!joined.length){result.innerHTML='<p class="text-rose-700 font-bold">No fue posible completar una asignación. Consulta con el coordinador.</p>';return;}
+      persistAssignmentData(); renderAssignmentHistory(); renderAssignmentModule();
+      const allAssigned=[...newMachineIds,...joined];
+      result.innerHTML=`<div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Asignación realizada</div><p class="mt-2 text-sm font-semibold">${escapeQuick(staff.name)} · Código ${escapeQuick(staff.code)}</p><div class="mt-3 space-y-2">${allAssigned.map(id=>{const rec=findMachineAssignmentRecord(key,id);const ops=rec?assignmentOperatorsForMachine(rec,id):[];const art=(rec?.machineArticles||{})[id]||{};const capacity=machineOperatorCapacity(id,art);return `<div class="rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 p-3"><div class="flex justify-between gap-2"><b class="text-lg">Máquina ${escapeQuick(id)}</b><span class="text-xs font-bold ${ops.length>=capacity?'text-emerald-700':'text-amber-700'}">${ops.length}/${capacity} operarios</span></div><div class="text-xs mt-1">${ops.map(op=>escapeQuick(op.name)+' ('+escapeQuick(op.code)+')').join(' · ')}</div>${capacity===2&&ops.length<2?'<p class="text-xs text-amber-700 mt-1 font-semibold">Falta un operario. Otro compañero debe ingresar su propio código.</p>':''}<div class="text-xs text-slate-500 mt-1">${escapeQuick(art.referencia||art.codArticulo||'Artículo sin referencia')}</div></div>`;}).join('')}</div><p class="text-xs mt-3 text-slate-600 dark:text-slate-300">Turno: ${escapeQuick(shift)} · Fecha: ${escapeQuick(date)}</p>`;
       document.getElementById('assignment-operator-code').value='';
     }
     function assignMachineManually(){
       if(!isAdminUser()){showToast('Solo el administrador puede realizar asignaciones manuales.','error');return;}
       const date=document.getElementById('assign-date')?.value||assignmentToday();
       const shift=document.getElementById('assign-shift')?.value||'Turno 1';
-      const key=assignmentShiftKey(date,shift);
-      const program=assignmentData.programs[key];
+      const key=assignmentShiftKey(date,shift); const program=assignmentData.programs[key];
       if(!program){showToast('Primero guarda la programación de máquinas para esta fecha y turno.','error');return;}
-      const used=new Set(assignmentData.records.filter(r=>r.programKey===key).flatMap(r=>r.machineIds||[]));
-      const available=(program.machineIds||[]).filter(id=>!used.has(id));
-      if(!available.length){showToast('No hay máquinas programadas disponibles para asignar.','error');return;}
-      const machineId=String(prompt(`Máquinas disponibles: ${available.join(', ')}\n\nEscribe el número de la máquina que deseas asignar:`)||'').trim();
+      const available=(program.machineIds||[]).filter(id=>machineAssignmentSlotsOpen(key,id)>0);
+      if(!available.length){showToast('No hay cupos de máquinas programadas disponibles.','error');return;}
+      const machineId=String(prompt(`Máquinas con cupos disponibles: ${available.join(', ')}\n\nEscribe el número de la máquina que deseas asignar:`)||'').trim();
       if(!machineId)return;
-      if(!available.includes(machineId)){showToast('La máquina no está disponible en esta programación o ya fue asignada.','error');return;}
-      const primaryCode=String(prompt(`Máquina ${machineId}. Ingresa el CÓDIGO del operario principal:`)||'').trim();
+      if(!available.includes(machineId)){showToast('La máquina no está disponible en esta programación o ya completó sus cupos.','error');return;}
+      const primaryCode=String(prompt(`Máquina ${machineId}. Ingresa el CÓDIGO del operario que deseas asignar:`)||'').trim();
       if(!primaryCode)return;
       const primary=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===primaryCode.toLowerCase());
-      if(!primary){showToast('No se encontró el código del operario principal.','error');return;}
+      if(!primary){showToast('No se encontró el código del operario.','error');return;}
       const usedCodes=getUsedOperatorCodes(key);
       if(usedCodes.has(primary.code.toLowerCase())){showToast('Ese operario ya tiene una asignación o apoyo en este turno.','error');return;}
-      const live=currentPlantState[machineId]||{};
-      const labelData=getProductionLabelData(machineId);
+      const existing=findMachineAssignmentRecord(key,machineId);
+      if(existing){
+        const ops=assignmentOperatorsForMachine(existing,machineId);
+        if(ops.length>=machineOperatorCapacity(machineId,(existing.machineArticles||{})[machineId])){showToast('La máquina ya completó sus dos cupos.','error');return;}
+        existing.machineOperators=existing.machineOperators||{};
+        existing.machineOperators[machineId]=[...ops,{code:primary.code,name:primary.name}];
+        existing.reassignmentHistory=existing.reassignmentHistory||[];
+        existing.reassignmentHistory.push({machineId,role:'segundo operario',to:{code:primary.code,name:primary.name},changedAt:new Date().toISOString(),assignmentMethod:'manual'});
+        persistAssignmentData();renderAssignmentHistory();renderAssignmentModule();
+        showToast(`Segundo cupo de la máquina ${machineId} asignado manualmente a ${primary.name}.`);return;
+      }
+      const live=currentPlantState[machineId]||{}; const labelData=getProductionLabelData(machineId);
       const article={codArticulo:String(live.codArticulo||'').trim(),referencia:String(live.referencia||labelData.reference||'').trim(),codMolde:String(live.codMolde||'').trim(),labelStatus:labelData.status,personalTurno:labelData.perShift??null,personalHora:labelData.perHour??null,cicloBase:labelData.cycle??null,cavidades:labelData.cavities??null,unidadEmpaque:labelData.pack??null};
       const operators=[{code:primary.code,name:primary.name}];
       if(machineNeedsTwoOperators(machineId,article.referencia)){
-        const entered=prompt(`El artículo de la máquina ${machineId} requiere DOS operarios.\n\nIngresa el código del segundo operario.\nDeja vacío para asignarlo aleatoriamente:`);
+        const entered=prompt(`El artículo de la máquina ${machineId} requiere DOS operarios.\n\nIngresa el código del segundo operario si deseas asignarlo ahora.\nDeja vacío para que otro operario ingrese su propio código en la pantalla de asignación.`);
         if(entered===null)return;
-        let secondary;
         if(String(entered).trim()){
-          const code=String(entered).trim();
-          secondary=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===code.toLowerCase());
+          const code=String(entered).trim(); const secondary=staffList.map(getStaffCodeAndName).find(p=>p.code.toLowerCase()===code.toLowerCase());
           if(!secondary){showToast('No se encontró el código del segundo operario.','error');return;}
           if(secondary.code.toLowerCase()===primary.code.toLowerCase()||usedCodes.has(secondary.code.toLowerCase())){showToast('El segundo operario debe ser diferente y no tener otra asignación en este turno.','error');return;}
-        }else{
-          secondary=chooseRandomSecondaryOperator(key,[primary.code]);
-          if(!secondary){showToast('No hay otro operario disponible para completar esta máquina.','error');return;}
+          operators.push({code:secondary.code,name:secondary.name});
         }
-        operators.push({code:secondary.code,name:secondary.name});
       }
       const record={id:`${Date.now()}_manual_${primary.code}`,programKey:key,date,shift,operatorCode:primary.code,operatorName:primary.name,machineIds:[machineId],machineArticles:{[machineId]:article},machineOperators:{[machineId]:operators},group:machineAssignmentGroup(machineId),primaryGroup:machineAssignmentGroup(machineId),coordinator:program.coordinator,createdAt:new Date().toISOString(),assignmentMethod:'manual'};
-      assignmentData.records.push(record);persistAssignmentData();renderAssignmentHistory();
-      showToast(`Máquina ${machineId} asignada manualmente a ${operators.map(o=>o.name).join(' y ')}.`);
+      assignmentData.records.push(record);persistAssignmentData();renderAssignmentHistory();renderAssignmentModule();
+      showToast(`Máquina ${machineId} asignada manualmente a ${operators.map(o=>o.name).join(' y ')}${operators.length===1&&machineNeedsTwoOperators(machineId,article.referencia)?'. Falta el segundo cupo.':'.'}`);
     }
     function changeMachineOperator(recordId,machineId){
       if(!isAdminUser()){showToast('Solo el administrador puede cambiar el operario asignado.','error');return;}
